@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 
 import flet as ft
 
+from tidyra.presentation.brand import logo_path
 from tidyra.presentation.components.file_list import file_list
 from tidyra.presentation.components.folder_picker import folder_picker
 
@@ -32,9 +33,20 @@ def home_view(app: TidyraApp) -> ft.Control:
         disabled=state.root is None or state.loading,
     )
 
+    # Brand mark + wordmark. The logo is the same SVG used as the window
+    # icon — see ``presentation/brand.py`` for the path resolver.
+    brand_row = ft.Row(
+        controls=[
+            ft.Image(src=str(logo_path()), width=36, height=36, fit=ft.BoxFit.CONTAIN),
+            ft.Text("Tidyra", size=28, weight=ft.FontWeight.BOLD),
+        ],
+        spacing=12,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+
     # Fixed-size content rendered above the file list.
     header: list[ft.Control] = [
-        ft.Text("Tidyra", size=28, weight=ft.FontWeight.BOLD),
+        brand_row,
         ft.Text(
             "Pick a folder to organize. Tidyra will propose a plan before moving anything.",
             color=ft.Colors.GREY,

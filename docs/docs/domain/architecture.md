@@ -149,4 +149,4 @@ preview shows it; the executor skips it. There is no silent overwrite.
 - No rule editor UI. Editing the TOML is the rule editor.
 - No telemetry, no analytics, no network calls.
 
-See [`roadmap.md`](roadmap.md) for what comes next.
+See [`roadmap.md`](../processes/roadmap.md) for what comes next.

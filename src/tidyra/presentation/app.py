@@ -7,6 +7,7 @@ import flet as ft
 from tidyra.application.services import OrganizeService
 from tidyra.infrastructure.filesystem import LocalFileSystem
 from tidyra.infrastructure.logging import configure_logging, logger
+from tidyra.presentation.brand import logo_path
 from tidyra.presentation.controller import TidyraApp
 from tidyra.presentation.state import UIState
 
@@ -18,6 +19,11 @@ async def main(page: ft.Page) -> None:
     page.padding = 0
     page.window.width = 760
     page.window.height = 640
+
+    # Brand the window. ``page.window.icon`` accepts a path; on platforms
+    # that need a raster icon (Windows .ico, macOS .icns), export from
+    # ``src/tidyra/resources/tidyra-logo.svg`` at the required size.
+    page.window.icon = str(logo_path())
 
     # Glassmorphism scrollbar — translucent thumb, near-invisible track,
     # always visible so the user can see (and grab) the scroll position

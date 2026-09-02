@@ -2,7 +2,7 @@
 
 Tidyra is being built in four phases. This document lists what's in
 each phase. Items are aspirational until they ship; the implementation
-status of each phase lives in [`CHANGELOG.md`](../CHANGELOG.md).
+status of each phase lives in [`CHANGELOG.md`](../../../CHANGELOG.md).
 
 ## Phase 1 — Rule-based foundation (current)
 

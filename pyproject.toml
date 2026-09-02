@@ -42,12 +42,13 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tidyra"]
-artifacts = ["src/tidyra/resources/*.toml"]
+artifacts = ["src/tidyra/resources/*.toml", "src/tidyra/resources/*.svg"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
 src = ["src"]
+extend-exclude = ["docs", ".memory", "file_list_*.log", "preview_*.log", "scroll_*.log", "stderr*.log", "stdout*.log"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "A", "C4", "SIM", "RUF"]

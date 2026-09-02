@@ -1,5 +1,7 @@
 # Tidyra
 
+![Tidyra logo](src/tidyra/resources/tidyra-logo.svg)
+
 > A safe, deterministic, rule-based folder organizer with a Flet desktop UI.
 
 Tidyra scans a folder you choose (typically `~/Downloads`), classifies each
@@ -51,12 +53,12 @@ opens the desktop window.
 
 ## Usage
 
-1. **Pick a folder.** Click *Select Folder* in the home view.
-2. **Scan.** Click *Scan*. Tidyra shows every file it found and how the
+1. Pick a folder. Click *Select Folder* in the home view.
+2. Scan. Click *Scan*. Tidyra shows every file it found and how the
    rules classified it.
-3. **Preview.** The preview view lists every move it plans to make and
+3. Preview. The preview view lists every move it plans to make and
    every file it will skip, with reasons.
-4. **Organize.** Click *Organize Files*. The preview becomes the result
+4. Organize. Click *Organize Files*. The preview becomes the result
    screen; failures (if any) are listed separately.
 
 ## Configuration
@@ -86,7 +88,7 @@ extensions = [".pdf"]
 priority = 15
 ```
 
-See [`docs/configuration.md`](docs/configuration.md) for the full schema,
+See [docs/docs/tooling/configuration.md](docs/docs/tooling/configuration.md) for the full schema,
 precedence rules, and conflict semantics.
 
 ## Architecture
@@ -104,7 +106,15 @@ Infrastructure
 The domain layer is pure: no Flet, no `tomllib`, no real `pathlib` I/O.
 Strategies are pluggable — a future `LLMStrategy` will satisfy the same
 `OrganizationStrategy` Protocol and produce the same `OrganizationPlan`.
-See [`docs/architecture.md`](docs/architecture.md).
+See [docs/docs/domain/architecture.md](docs/docs/domain/architecture.md) and the
+[rationale in ADR-0001](docs/docs/adrs/0001-four-layer-architecture.md).
+
+## Documentation
+
+The full docs site lives under [docs/docs/](docs/docs/index.md).
+Start at [docs/docs/index.md](docs/docs/index.md) (the knowledge domain map) and
+follow the routing. The rules that apply to every task are in
+[docs/docs/core/invariants/core.md](docs/docs/core/invariants/core.md).
 
 ## Development
 
@@ -118,18 +128,20 @@ uv run python -m tidyra        # smoke launch
 
 Add a dependency: `uv add <package>`. Add a dev tool: `uv add --dev <package>`.
 
-See [`docs/development.md`](docs/development.md) for how to add a rule, a
+See [docs/docs/tooling/development.md](docs/docs/tooling/development.md) for how to add a rule, a
 strategy, or a view.
 
 ## Roadmap
 
 The current release is **alpha** — Phase 1 from the roadmap. Future
 phases add undo, custom rule editor, an optional LLM strategy, and
-scheduled organization. See [`docs/roadmap.md`](docs/roadmap.md).
+scheduled organization. See [docs/docs/processes/roadmap.md](docs/docs/processes/roadmap.md).
 
 ## Contributing
 
-Contributions welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
+the docs-routing workflow, and how architectural decisions are captured
+as ADRs.
 
 ## License
 
