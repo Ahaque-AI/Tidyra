@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# uv
+.venv/
+uv-cache/
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local scratch
+*.log
+.gitignore-tmp
+
+# Project session log (git-ignored per AGENTS.md §8e)
+.memory/
+
+# Hatch
+src/tidyra/*.egg-info/

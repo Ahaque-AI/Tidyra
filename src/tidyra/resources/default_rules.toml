@@ -1,0 +1,56 @@
+# Tidyra — built-in default rules.
+#
+# Override any of these by dropping your own rules.toml at the user config
+# directory (run `uv run python -c "from tidyra.infrastructure.configuration
+# import get_config_service; print(get_config_service().default_config_path())"`
+# to see where that is on your machine) or a rules.toml in the current
+# working directory. User rules override defaults by `name`.
+
+[[rule]]
+name = "images"
+destination = "Images"
+extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".svg", ".heic"]
+priority = 10
+
+[[rule]]
+name = "documents"
+destination = "Documents"
+extensions = [".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".odt", ".md", ".rtf", ".csv", ".epub"]
+priority = 10
+
+[[rule]]
+name = "music"
+destination = "Music"
+extensions = [".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a", ".opus", ".wma"]
+priority = 10
+
+[[rule]]
+name = "videos"
+destination = "Videos"
+extensions = [".mp4", ".mkv", ".mov", ".avi", ".webm", ".wmv", ".flv", ".m4v"]
+priority = 10
+
+[[rule]]
+name = "archives"
+destination = "Archives"
+extensions = [".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar", ".tgz"]
+priority = 10
+
+[[rule]]
+name = "applications"
+destination = "Applications"
+extensions = [".exe", ".msi", ".dmg", ".pkg", ".deb", ".rpm", ".apk", ".appimage"]
+priority = 10
+
+[[rule]]
+name = "code"
+destination = "Code"
+extensions = [".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java", ".kt", ".swift", ".c", ".cpp", ".h", ".hpp", ".cs", ".rb", ".php", ".sh", ".ps1", ".html", ".css", ".scss", ".sql", ".yaml", ".yml", ".json", ".toml", ".xml"]
+priority = 10
+
+# Catch-all — anything not matched above ends up here. Always matches.
+[[rule]]
+name = "other"
+destination = "Misc"
+priority = 0
+always_matches = true

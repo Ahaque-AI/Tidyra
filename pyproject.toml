@@ -1,0 +1,71 @@
+[project]
+name = "tidyra"
+version = "0.1.0"
+description = "A safe, deterministic, rule-based folder organizer with a Flet desktop UI."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Abdul Haque" }]
+keywords = ["folder-organizer", "file-management", "desktop", "flet", "rules"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "flet>=0.28",
+    "platformdirs>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+[project.scripts]
+tidyra = "tidyra.presentation.app:run"
+
+[project.urls]
+Homepage = "https://github.com/abdulhaque/tidyra"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tidyra"]
+artifacts = ["src/tidyra/resources/*.toml"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "A", "C4", "SIM", "RUF"]
+ignore = [
+    "E501",  # line length handled by formatter
+    "RUF006",  # fire-and-forget event handlers don't need a stored task ref
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["tidyra"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_ignores = true
+warn_return_any = true
+disallow_untyped_defs = true
+files = ["src"]

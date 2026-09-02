@@ -1,0 +1,97 @@
+"""Filesystem abstraction.
+
+The domain and application layers never touch the real filesystem
+directly. All access goes through a ``FileSystem`` implementation. The
+production implementation is :class:`LocalFileSystem`; tests can inject
+an in-memory fake without ever touching a developer machine.
+"""
+
+from __future__ import annotations
+
+import shutil
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Protocol, runtime_checkable
+
+from tidyra.domain.models import FileEntry
+
+
+@runtime_checkable
+class FileSystem(Protocol):
+    """The minimum surface the organizer needs from a filesystem."""
+
+    def scan(self, root: Path) -> Sequence[FileEntry]:
+        """Return a flat list of entries directly inside ``root``.
+
+        The scan does not recurse — only the top level matters for the
+        initial release. Subdirectories are recorded as ``FileEntry`` with
+        ``is_directory=True`` and are skipped during planning.
+        """
+        ...
+
+    def move(self, source: Path, destination: Path) -> None:
+        """Move a regular file from source to destination.
+
+        Implementations MUST create parent directories as needed. The
+        caller is responsible for confirming the move is safe (the plan
+        validator handles that).
+        """
+        ...
+
+    def exists(self, path: Path) -> bool:
+        """Return True if ``path`` exists (file, directory, or symlink)."""
+        ...
+
+    def create_directory(self, path: Path) -> None:
+        """Create ``path`` and any missing parents.
+
+        No-op if ``path`` already exists.
+        """
+        ...
+
+    def is_within(self, path: Path, root: Path) -> bool:
+        """Return True if ``path`` resolves inside ``root``."""
+        ...
+
+
+class LocalFileSystem:
+    """Concrete ``FileSystem`` backed by :mod:`pathlib` and :mod:`shutil`."""
+
+    def scan(self, root: Path) -> Sequence[FileEntry]:
+        if not root.exists() or not root.is_dir():
+            return ()
+        entries: list[FileEntry] = []
+        for child in root.iterdir():
+            entries.append(self._build_entry(child))
+        return entries
+
+    def move(self, source: Path, destination: Path) -> None:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(source), str(destination))
+
+    def exists(self, path: Path) -> bool:
+        return path.exists()
+
+    def create_directory(self, path: Path) -> None:
+        path.mkdir(parents=True, exist_ok=True)
+
+    def is_within(self, path: Path, root: Path) -> bool:
+        try:
+            path.resolve().relative_to(root.resolve())
+        except ValueError:
+            return False
+        return True
+
+    @staticmethod
+    def _build_entry(child: Path) -> FileEntry:
+        # Use lstat so we don't follow symlinks — recording them honestly
+        # is part of the safety contract.
+        stat = child.lstat()
+        return FileEntry(
+            path=child,
+            name=child.name,
+            extension=child.suffix.lower(),
+            size=stat.st_size,
+            is_symlink=child.is_symlink(),
+            is_directory=child.is_dir() and not child.is_symlink(),
+        )
