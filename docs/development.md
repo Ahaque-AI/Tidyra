@@ -34,6 +34,8 @@ This installs:
 | Add a runtime dep | `uv add <package>` |
 | Add a dev tool | `uv add --dev <package>` |
 | Re-lock deps | `uv lock` |
+| Verbose logs | `$env:TIDYRA_LOG_LEVEL='DEBUG'; uv run tidyra` |
+| JSON file log | `$env:TIDYRA_LOG_FILE='C:\Users\You\tidyra.jsonl'; uv run tidyra` |
 
 ## Project structure
 
@@ -55,6 +57,7 @@ src/tidyra/
   infrastructure/
     filesystem.py    FileSystem Protocol, LocalFileSystem
     configuration.py ConfigService, default rule discovery
+    logging.py       configure_logging (loguru sinks)
   presentation/
     app.py           Flet entry point (main, run)
     controller.py    TidyraApp
@@ -160,6 +163,43 @@ If you add a field to `OrganizationRule` (in
 - No `os` module — use `pathlib`.
 - No raw TOML in domain code — only `OrganizationRule` dataclasses.
 - One concern per module. If a module exceeds ~300 lines, split it.
+
+## Logging
+
+Tidyra uses [`loguru`](https://loguru.readthedocs.io/) for structured
+logging. Configuration lives in `src/tidyra/infrastructure/logging.py`
+and is invoked once at process start (in `run()` and `__main__.py`).
+Every other module imports `from loguru import logger` and uses
+`logger.bind(...)` for structured context.
+
+Records are emitted as colourised lines on `stderr` by default. Set
+`TIDYRA_LOG_FILE` to mirror the same records to a JSON-lines file
+(rotated at 10 MB, last 5 retained) for downstream tooling.
+
+| Env var | Purpose | Default |
+|---|---|---|
+| `TIDYRA_LOG_LEVEL` | Console + file sink level | `INFO` |
+| `TIDYRA_LOG_FILE` | Path for the JSON-lines mirror | unset (file sink disabled) |
+
+Examples:
+
+```powershell
+$env:TIDYRA_LOG_LEVEL='DEBUG'; uv run tidyra
+$env:TIDYRA_LOG_FILE="$env:USERPROFILE\tidyra.jsonl"; uv run tidyra
+```
+
+Structured fields that every record carries:
+
+- `record.extra.component` — the subsystem that emitted the record
+  (`executor`, `controller`, `filesystem`, `config`, `service`,
+  `logging`, `presentation`).
+- Per-call bindings — `root`, `file_path`, `rule_name`, `skip_reason`,
+  `moves`, `failed`, etc., depending on the call site.
+
+When something goes wrong, prefer `logger.exception("...")` inside an
+`except` block — loguru captures the traceback automatically and the
+JSON record carries a populated `record.exception` object with `type`,
+`value`, and `traceback`.
 
 ## Smoke-testing a change
 

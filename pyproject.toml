@@ -20,6 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "flet>=0.28",
+    "loguru>=0.7.3",
     "platformdirs>=4.0",
 ]
 

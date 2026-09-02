@@ -10,6 +10,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
+from loguru import logger
+
 from tidyra.application.organize import OrganizeExecutor
 from tidyra.application.scanner import scan_directory
 from tidyra.domain.models import FileEntry
@@ -64,6 +66,15 @@ class OrganizeService:
         validator = PlanValidator(root=root, destination_exists=self._fs.exists)
         strategy = RuleBasedStrategy(validator=validator)
         plan = strategy.create_plan(root=root, entries=entries, rules=self.rules())
+        moves = plan.to_execute()
+        skips = plan.skipped()
+        logger.bind(
+            root=str(root),
+            entries=len(entries),
+            to_move=len(moves),
+            skipped=len(skips),
+            component="service",
+        ).info("plan ready")
         return plan, entries
 
     def execute(self, plan: OrganizationPlan) -> OrganizationResult:

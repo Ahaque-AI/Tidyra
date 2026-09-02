@@ -19,6 +19,7 @@ from importlib.resources import files
 from pathlib import Path
 
 import platformdirs
+from loguru import logger
 
 from tidyra.domain.rules import OrganizationRule
 
@@ -52,10 +53,22 @@ class ConfigService:
         ):
             if path.is_file():
                 rules = self._parse_toml(path.read_bytes())
+                logger.bind(
+                    origin=origin,
+                    path=str(path),
+                    rule_count=len(rules),
+                    component="config",
+                ).info("loaded rule set from TOML")
                 return rules, RuleSource(path=path, origin=origin)
         # Fall back to built-in defaults (always present).
         builtin = files("tidyra.resources").joinpath(self.BUILTIN_NAME)
         rules = self._parse_toml(builtin.read_bytes())
+        logger.bind(
+            origin="builtin",
+            path=str(builtin),
+            rule_count=len(rules),
+            component="config",
+        ).info("loaded built-in rule set")
         return rules, RuleSource(path=Path(str(builtin)), origin="builtin")
 
     def default_config_path(self) -> Path:

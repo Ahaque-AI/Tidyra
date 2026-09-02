@@ -24,6 +24,10 @@ nothing is overwritten silently, and the preview is a real
   filesystem.
 - **Cross-platform desktop.** Single Python codebase; runs on Windows,
   macOS, and Linux via Flet.
+- **Structured logging.** Every scan, move, skip, and rule-match is
+  recorded via [loguru](https://loguru.readthedocs.io/) with bound
+  context (`root`, `file_path`, `rule_name`, …). Mirror to a
+  JSON-lines file with `TIDYRA_LOG_FILE` for downstream tooling.
 - **Pure-domain core.** The domain layer has zero Flet, zero TOML, and
   zero filesystem imports — it's testable without launching a UI.
 

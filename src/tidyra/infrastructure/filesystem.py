@@ -13,6 +13,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from loguru import logger
+
 from tidyra.domain.models import FileEntry
 
 
@@ -59,14 +61,36 @@ class LocalFileSystem:
 
     def scan(self, root: Path) -> Sequence[FileEntry]:
         if not root.exists() or not root.is_dir():
+            logger.bind(root=str(root), component="filesystem").warning(
+                "scan: root missing or not a directory"
+            )
             return ()
         entries: list[FileEntry] = []
         for child in root.iterdir():
-            entries.append(self._build_entry(child))
+            try:
+                entries.append(self._build_entry(child))
+            except OSError:
+                # One bad entry (e.g. a broken symlink) should not abort
+                # the whole scan. Log it and move on.
+                logger.bind(
+                    root=str(root),
+                    child=str(child),
+                    component="filesystem",
+                ).exception("scan: failed to stat entry")
+        logger.bind(
+            root=str(root),
+            entries=len(entries),
+            component="filesystem",
+        ).info("scan complete")
         return entries
 
     def move(self, source: Path, destination: Path) -> None:
         destination.parent.mkdir(parents=True, exist_ok=True)
+        logger.bind(
+            source=str(source),
+            destination=str(destination),
+            component="filesystem",
+        ).info("move: starting")
         shutil.move(str(source), str(destination))
 
     def exists(self, path: Path) -> bool:
@@ -74,6 +98,7 @@ class LocalFileSystem:
 
     def create_directory(self, path: Path) -> None:
         path.mkdir(parents=True, exist_ok=True)
+        logger.bind(path=str(path), component="filesystem").debug("create_directory")
 
     def is_within(self, path: Path, root: Path) -> bool:
         try:

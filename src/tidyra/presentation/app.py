@@ -6,6 +6,7 @@ import flet as ft
 
 from tidyra.application.services import OrganizeService
 from tidyra.infrastructure.filesystem import LocalFileSystem
+from tidyra.infrastructure.logging import configure_logging, logger
 from tidyra.presentation.controller import TidyraApp
 from tidyra.presentation.state import UIState
 
@@ -24,12 +25,22 @@ async def main(page: ft.Page) -> None:
     state.on_navigate = app.render
 
     picker = ft.FilePicker()
-    page.overlay.append(picker)
+    # Flet 0.86: services live on ``page.services``, not ``page.overlay``.
+    # Adding a service to the overlay renders an "Unknown control" stub
+    # and the client never wires up the invoke-method listener, which
+    # causes every ``get_directory_path`` call to time out after 10 s.
+    page.services.append(picker)
     app.picker = picker
 
+    logger.bind(component="presentation", screen="home").info("tidyra app started")
     app.render()
 
 
 def run() -> None:
-    """Console-script entry point — wraps ``main`` with ``ft.run``."""
+    """Console-script entry point — wraps ``main`` with ``ft.run``.
+
+    Initialises logging before Flet takes over so import-time failures
+    (broken TOML, missing resources, etc.) still surface in the sinks.
+    """
+    configure_logging()
     ft.run(main)
