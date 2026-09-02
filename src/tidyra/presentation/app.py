@@ -19,6 +19,25 @@ async def main(page: ft.Page) -> None:
     page.window.width = 760
     page.window.height = 640
 
+    # Glassmorphism scrollbar — translucent thumb, near-invisible track,
+    # always visible so the user can see (and grab) the scroll position
+    # without having to hover first. Uses ``ON_SURFACE`` so it adapts to
+    # light/dark mode automatically.
+    page.theme = ft.Theme(
+        scrollbar_theme=ft.ScrollbarTheme(
+            thumb_color=ft.Colors.with_opacity(0.45, ft.Colors.ON_SURFACE),
+            track_color=ft.Colors.with_opacity(0.04, ft.Colors.ON_SURFACE),
+            track_border_color=ft.Colors.TRANSPARENT,
+            thickness=10,
+            radius=8,
+            main_axis_margin=4,
+            cross_axis_margin=2,
+            min_thumb_length=36,
+            thumb_visibility=True,
+            track_visibility=False,
+        ),
+    )
+
     service = OrganizeService(LocalFileSystem())
     state = UIState(service=service)
     app = TidyraApp(page=page, state=state)

@@ -141,6 +141,7 @@ class TidyraApp:
         logger.bind(component="controller").info("back_home")
         self.state.screen = Screen.HOME
         self.state.plan = None
+        self.state.entries = ()
         self.state.result = None
         self.state.error = None
         self.render()

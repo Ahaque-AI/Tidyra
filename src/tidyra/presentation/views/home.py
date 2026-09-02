@@ -1,4 +1,13 @@
-"""Home view — folder selection + scan trigger."""
+"""Home view — folder selection + scan trigger.
+
+Layout: the file list (when present) is the only scrollable region on
+this screen. The outer Column has no scroll of its own — that was
+causing wheel events to be captured by the page instead of the list,
+so the list scrollbar never moved. With ``expand=True`` on the file
+list card and ``expand=True`` on the root Container, the list fills
+the available vertical space and the scan button stays pinned at the
+bottom regardless of how many files were scanned.
+"""
 
 from __future__ import annotations
 
@@ -23,7 +32,8 @@ def home_view(app: TidyraApp) -> ft.Control:
         disabled=state.root is None or state.loading,
     )
 
-    contents: list[ft.Control] = [
+    # Fixed-size content rendered above the file list.
+    header: list[ft.Control] = [
         ft.Text("Tidyra", size=28, weight=ft.FontWeight.BOLD),
         ft.Text(
             "Pick a folder to organize. Tidyra will propose a plan before moving anything.",
@@ -34,28 +44,37 @@ def home_view(app: TidyraApp) -> ft.Control:
     ]
 
     if state.error:
-        contents.append(
+        header.append(
             ft.Container(
                 content=ft.Text(state.error, color=ft.Colors.RED),
                 padding=8,
             )
         )
 
+    # Inner card that fills the available vertical space and owns the
+    # scroll. ``expand=True`` so it grows/shrinks with the window.
+    file_list_card: ft.Control | None = None
     if state.entries:
-        contents.append(
+        header.append(
             ft.Text(
                 f"Found {len(state.entries)} files",
                 weight=ft.FontWeight.BOLD,
             )
         )
-        contents.append(file_list(state.entries))
+        operations = state.plan.operations if state.plan is not None else ()
+        file_list_card = file_list(state.entries, operations)
 
-    contents.append(scan_button)
-
+    footer: list[ft.Control] = [scan_button]
     if state.loading:
-        contents.append(ft.ProgressRing())
+        footer.append(ft.ProgressRing())
+
+    controls: list[ft.Control] = list(header)
+    if file_list_card is not None:
+        controls.append(ft.Container(content=file_list_card, expand=True))
+    controls.extend(footer)
 
     return ft.Container(
-        content=ft.Column(controls=contents, spacing=16, scroll=ft.ScrollMode.AUTO),
+        content=ft.Column(controls=controls, spacing=16, expand=True),
         padding=16,
+        expand=True,
     )

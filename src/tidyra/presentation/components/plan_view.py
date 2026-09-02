@@ -1,4 +1,17 @@
-"""Plan view — the proposed organization for the preview screen."""
+"""Plan view — the proposed organization for the preview screen.
+
+Layout note: the outer Column is the SINGLE scrollable region for the
+whole plan. Earlier versions wrapped each section (Will move / Will
+skip) in its own inner scrollable Column, but that nests two scroll
+contexts — wheel events get captured by the outer one and the inner
+ones never receive them, so the inner scrollbar never moves.
+
+Now the outer Column has ``expand=True, scroll=ft.ScrollMode.ALWAYS``
+so it fills the available space and the glassmorphism scrollbar from
+the page theme is always visible. Every move card and skip card is
+laid out as a direct child of that outer Column, so the whole plan
+scrolls together as one unit.
+"""
 
 from __future__ import annotations
 
@@ -8,7 +21,12 @@ from tidyra.domain.plans import FileOperation, OrganizationPlan, SkipReason
 
 
 def plan_view(plan: OrganizationPlan) -> ft.Control:
-    """Render a plan summary with one card per executable operation."""
+    """Render a plan summary with one card per operation.
+
+    Sections are interleaved (summary chips, "Will move" header, every
+    move card, "Will skip" header, every skip card) so the single
+    outer scroll can carry the user through the entire preview.
+    """
     moves = plan.to_execute()
     skips = plan.skipped()
 
@@ -29,21 +47,24 @@ def plan_view(plan: OrganizationPlan) -> ft.Control:
         padding=ft.Padding.symmetric(vertical=8),
     )
 
-    move_cards: list[ft.Control] = (
-        [move_card(op) for op in moves] if moves else [ft.Text("Nothing to move.", italic=True)]
-    )
-    skip_cards: list[ft.Control] = [skip_card(op) for op in skips] if skips else []
+    sections: list[ft.Control] = [summary]
 
-    sections: list[ft.Control] = [
-        summary,
-        ft.Text("Will move", weight=ft.FontWeight.BOLD, size=14),
-        ft.Column(controls=move_cards, spacing=6, scroll=ft.ScrollMode.AUTO),
-    ]
-    if skip_cards:
+    sections.append(ft.Text("Will move", weight=ft.FontWeight.BOLD, size=14))
+    if moves:
+        sections.extend(move_card(op) for op in moves)
+    else:
+        sections.append(ft.Text("Nothing to move.", italic=True))
+
+    if skips:
         sections.append(ft.Text("Will skip", weight=ft.FontWeight.BOLD, size=14))
-        sections.append(ft.Column(controls=skip_cards, spacing=6, scroll=ft.ScrollMode.AUTO))
+        sections.extend(skip_card(op) for op in skips)
 
-    return ft.Column(controls=sections, spacing=12)
+    return ft.Column(
+        controls=sections,
+        spacing=8,
+        expand=True,
+        scroll=ft.ScrollMode.ALWAYS,
+    )
 
 
 def move_card(op: FileOperation) -> ft.Control:
@@ -89,3 +110,6 @@ def _skip_label(reason: SkipReason | None) -> str:
     if reason is None:
         return ""
     return reason.name.replace("_", " ").title()
+
+
+__all__ = ["move_card", "plan_view", "skip_card"]
