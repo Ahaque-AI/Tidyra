@@ -1,0 +1,274 @@
+name: release
+
+on:
+  push:
+    tags:
+      # Match SemVer tags like v0.1.0, v0.2.0-rc1, v1.2.3
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name to release (must already exist as a git ref, e.g. v0.1.0)"
+        required: true
+        default: ""
+
+permissions:
+  contents: write   # needed to create the GitHub Release
+
+jobs:
+  # ---------------------------------------------------------------------
+  # Windows build → tidyra-windows-x64.zip
+  # ---------------------------------------------------------------------
+  build-windows:
+    name: Build Windows .exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.x"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Sync deps (incl. dev)
+        run: uv sync --extra dev
+
+      - name: Verify icons are present
+        shell: pwsh
+        run: |
+          if (-not (Test-Path assets\icons\tidyra-icon.ico)) { throw "missing assets\icons\tidyra-icon.ico" }
+          if (-not (Test-Path assets\icons\icon.png)) { throw "missing assets\icons\icon.png" }
+          Write-Host "Icon set OK."
+
+      # Pre-populate the Flet build-template cache. flet build downloads
+      # ~500 KB from github.com on every fresh runner; doing this once
+      # before the build also guards against transient DNS hiccups on
+      # the runner host. Same approach for the macOS/Linux jobs below.
+      - name: Pre-populate Flet template cache
+        run: uv run python tools/prefetch_flet_template.py
+
+      - name: Lint + type check
+        run: |
+          uv run ruff check .
+          uv run mypy src tools
+
+      - name: Build Windows executable
+        run: >
+          uv run flet build windows
+          --project tidyra
+          --product Tidyra
+          --org dev.abdulhaque
+          --bundle-id dev.abdulhaque.tidyra
+          --copyright "MIT License"
+        # The entry point is configured in pyproject.toml's
+        # [tool.flet.app] block — no --module-name flag needed.
+
+      - name: Zip dist/
+        shell: pwsh
+        run: |
+          if (-not (Test-Path dist\windows)) { throw "no dist/windows produced" }
+          Compress-Archive -Path dist\windows\* -DestinationPath tidyra-windows-x64.zip
+          Write-Host "Zipped tidyra-windows-x64.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tidyra-windows-x64
+          path: tidyra-windows-x64.zip
+
+  # ---------------------------------------------------------------------
+  # macOS build → tidyra-macos-arm64.zip + tidyra.icns
+  # ---------------------------------------------------------------------
+  build-macos:
+    name: Build macOS .app
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.x"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Sync deps (incl. dev)
+        run: uv sync --extra dev
+
+      - name: Pre-populate Flet template cache
+        run: uv run python tools/prefetch_flet_template.py
+
+      - name: Lint + type check
+        run: |
+          uv run ruff check .
+          uv run mypy src tools
+
+      # Build the .icns from the multi-size PNG set. iconutil is
+      # macOS-only, which is why this lives on the macOS runner.
+      - name: Build .icns from PNG iconset
+        run: |
+          set -euo pipefail
+          ICONSET="$(mktemp -d)/tidyra.iconset"
+          mkdir -p "$ICONSET"
+          # Flet looks for a single icon.png, but iconutil wants the
+          # multi-size iconset layout.
+          cp assets/icons/png/tidyra-icon-16.png   "$ICONSET/icon_16x16.png"
+          cp assets/icons/png/tidyra-icon-32.png   "$ICONSET/icon_16x16@2x.png"
+          cp assets/icons/png/tidyra-icon-32.png   "$ICONSET/icon_32x32.png"
+          cp assets/icons/png/tidyra-icon-64.png   "$ICONSET/icon_32x32@2x.png"
+          cp assets/icons/png/tidyra-icon-128.png  "$ICONSET/icon_128x128.png"
+          cp assets/icons/png/tidyra-icon-256.png  "$ICONSET/icon_128x128@2x.png"
+          cp assets/icons/png/tidyra-icon-256.png  "$ICONSET/icon_256x256.png"
+          cp assets/icons/png/tidyra-icon-512.png  "$ICONSET/icon_256x256@2x.png"
+          cp assets/icons/png/tidyra-icon-512.png  "$ICONSET/icon_512x512.png"
+          cp assets/icons/png/tidyra-icon-1024.png "$ICONSET/icon_512x512@2x.png"
+          iconutil -c icns "$ICONSET" -o tidyra.icns
+          ls -la tidyra.icns
+
+      - name: Build macOS .app
+        run: >
+          uv run flet build macos
+          --project tidyra
+          --product Tidyra
+          --org dev.abdulhaque
+          --bundle-id dev.abdulhaque.tidyra
+          --copyright "MIT License"
+        # Entry point configured in pyproject.toml [tool.flet.app].
+
+      - name: Zip the .app bundle
+        run: |
+          set -euo pipefail
+          cd dist/macos
+          # flet produces a directory containing AppName.app; zip its contents.
+          ditto -c -k --sequester-Rsrc --keepParent "tidyra.app" ../../tidyra-macos-arm64.zip
+          cd ../..
+          ls -la tidyra-macos-arm64.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tidyra-macos-arm64
+          path: tidyra-macos-arm64.zip
+
+  # ---------------------------------------------------------------------
+  # Linux build → tidyra-x86_64.AppImage
+  # ---------------------------------------------------------------------
+  build-linux:
+    name: Build Linux AppImage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.6.x"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Sync deps (incl. dev)
+        run: uv sync --extra dev
+
+      # AppImage needs FUSE and a few desktop integration packages on
+      # the build host. Without them, flet build can still complete but
+      # the resulting AppImage may not be runnable.
+      - name: Install Linux build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 desktop-file-utils
+
+      - name: Pre-populate Flet template cache
+        run: uv run python tools/prefetch_flet_template.py
+
+      - name: Lint + type check
+        run: |
+          uv run ruff check .
+          uv run mypy src tools
+
+      - name: Build Linux AppImage
+        run: >
+          uv run flet build linux
+          --project tidyra
+          --product Tidyra
+          --org dev.abdulhaque
+          --bundle-id dev.abdulhaque.tidyra
+          --copyright "MIT License"
+        # Entry point configured in pyproject.toml [tool.flet.app].
+
+      - name: Locate AppImage
+        run: |
+          set -euo pipefail
+          find dist -maxdepth 3 -name "*.AppImage" -type f | tee appimage_path.txt
+          APPIMAGE="$(cat appimage_path.txt | head -n1)"
+          if [ -z "$APPIMAGE" ]; then echo "no AppImage found" && exit 1; fi
+          mv "$APPIMAGE" tidyra-x86_64.AppImage
+          chmod +x tidyra-x86_64.AppImage
+          ls -la tidyra-x86_64.AppImage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tidyra-x86_64
+          path: tidyra-x86_64.AppImage
+
+  # ---------------------------------------------------------------------
+  # Aggregate: collect all three artifacts and create a GitHub Release.
+  # Only runs on tag pushes (not on workflow_dispatch test runs).
+  # ---------------------------------------------------------------------
+  release:
+    name: Create GitHub Release
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List downloaded artifacts
+        run: ls -la artifacts/
+
+      - name: Read CHANGELOG excerpt
+        id: changelog
+        run: |
+          python3 - <<'PY'
+          import re, pathlib, os
+          tag = os.environ["GITHUB_REF_NAME"]
+          # Find the section whose header starts with the version
+          # (e.g. "## [0.2.0] - 2026-09-02"). Pull until the next "## ".
+          text = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+          pattern = re.compile(
+              r"^## \[(?P<v>[^\]]+)\][^\n]*\n(?P<body>.*?)(?=^## |\Z)",
+              re.MULTILINE | re.DOTALL,
+          )
+          version = tag.lstrip("v")
+          match = None
+          for m in pattern.finditer(text):
+              if m.group("v").split("-")[0] == version:
+                  match = m
+                  break
+          body = match.group("body").strip() if match else (
+              "No changelog entry found for this tag.\n"
+          )
+          pathlib.Path("release_body.md").write_text(body, encoding="utf-8")
+          print(body[:200])
+          PY
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body_path: release_body.md
+          generate_release_notes: false
+          fail_on_unmatched_files: true
+          files: |
+            artifacts/tidyra-windows-x64/tidyra-windows-x64.zip
+            artifacts/tidyra-macos-arm64/tidyra-macos-arm64.zip
+            artifacts/tidyra-x86_64/tidyra-x86_64.AppImage

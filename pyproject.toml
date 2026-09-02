@@ -44,6 +44,16 @@ build-backend = "hatchling.build"
 packages = ["src/tidyra"]
 artifacts = ["src/tidyra/resources/*.toml", "src/tidyra/resources/*.svg", "src/tidyra/resources/*.ico"]
 
+[tool.flet.app]
+# `flet build` packages whatever directory `path` resolves to and
+# looks for the entry module there. We use a src layout, so the path
+# is `src/tidyra` (so the whole `tidyra` package is in the bundle) and
+# the entry module is the shim at `src/tidyra/main.py`, which
+# re-exports `main` from `tidyra.presentation.app`. See
+# src/tidyra/main.py and docs/docs/tooling/invariants/tooling.md §10.
+path = "src/tidyra"
+module = "main"
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"

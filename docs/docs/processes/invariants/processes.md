@@ -87,11 +87,20 @@ After updating the README, mention it in the handoff so the user knows it change
 
 ## 5. Release flow
 
-1. Bump version in `pyproject.toml`.
-2. Move `[Unreleased]` items in `CHANGELOG.md` to a dated section (`## [X.Y.Z] - YYYY-MM-DD`).
-3. Update the link targets at the bottom of `CHANGELOG.md` (`[Unreleased]`, `[X.Y.Z]`).
-4. Tag and push. CI builds and publishes when CI exists.
-5. Open a release on GitHub summarising the change in user-facing language (no internal jargon, no `feat():` subject line — the release is for users, not the changelog).
+Tidyra releases follow this sequence:
+
+1. **Verify green**: `main` is up to date with the latest merged PR, and `.github/workflows/ci.yml` is green.
+2. **Bump version** in `pyproject.toml` (`version = "..."`).
+3. **Update CHANGELOG**: move `[Unreleased]` items to a dated section named `## [X.Y.Z] - YYYY-MM-DD`, then update the link targets at the bottom of `CHANGELOG.md` (`[Unreleased]`, `[X.Y.Z]`).
+4. **Regenerate icons if the brand changed** (`uv run python tools/build_icon.py`); commit the regenerated assets.
+5. **Tag and push** the commit: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+6. **CI runs `.github/workflows/release.yml`**. Three matrix jobs build the Windows `.exe`, macOS `.app`, and Linux AppImage in parallel. A fourth job aggregates the three artifacts and creates a GitHub Release whose body is the matching CHANGELOG section.
+7. **Verify the Release**: open the Releases page, confirm all three artifacts are attached, and sanity-check the body. If a job failed, the release is not created — fix and re-t-tect.
+8. **Announce** in user-facing language (no `feat():` subject lines, no internal jargon — the release notes are for users, not for the changelog).
+
+Code signing is **not** wired up yet. Windows binaries trigger SmartScreen warnings; macOS binaries trigger Gatekeeper warnings. We accept these for the alpha phase. ADR-0009 captures the decision and lists the follow-ups.
+
+The full packaging setup (icon assets, flet build flags, CI workflows) lives in [tooling/invariants/tooling.md §10](../../tooling/invariants/tooling.md#10-cross-platform-packaging--flet-build--github-actions).
 
 ## 6. One concern per commit
 

@@ -14,6 +14,7 @@ Every decision that shapes the codebase — layer boundaries, dependency choices
 | [0006](0006-importlib-resources-for-packaged-assets.md) | `importlib.resources` for packaged assets | Accepted | 2026-09-02 |
 | [0007](0007-tidyra-brand-mark.md) | Tidyra brand mark — folder with three tidied file cards | Accepted | 2026-09-02 |
 | [0008](0008-smarter-rule-engine.md) | Smarter rule engine — name patterns, nested destinations, recursive scan | Accepted | 2026-09-02 |
+| [0009](0009-cross-platform-packaging.md) | Cross-platform packaging — `flet build` + GitHub Actions releases | Accepted | 2026-09-02 |
 
 ## Format
 

@@ -48,6 +48,22 @@ nothing is overwritten silently, and the preview is a real
 
 ## Quick start
 
+### From a binary release (recommended for most users)
+
+Download the build that matches your OS from
+[Releases](https://github.com/abdulhaque/tidyra/releases):
+
+| OS | File | Notes |
+|---|---|---|
+| Windows | `tidyra-windows-x64.zip` | Unzip and run `tidyra.exe`. |
+| macOS (Apple Silicon) | `tidyra-macos-arm64.zip` | Unzip and run the `.app`. First launch may require `xattr -d com.apple.quarantine` because the build is unsigned. |
+| Linux | `tidyra-x86_64.AppImage` | `chmod +x tidyra-x86_64.AppImage && ./tidyra-x86_64.AppImage`. |
+
+The release artifacts are produced by GitHub Actions on every `v*.*.*`
+tag push — see [docs/docs/tooling/invariants/tooling.md §10](docs/docs/tooling/invariants/tooling.md#10-cross-platform-packaging--flet-build--github-actions) and [ADR-0009](docs/docs/adrs/0009-cross-platform-packaging.md).
+
+### From source
+
 Install [uv](https://docs.astral.sh/uv/) if you don't have it, then:
 
 ```powershell
@@ -139,6 +155,25 @@ Add a dependency: `uv add <package>`. Add a dev tool: `uv add --dev <package>`.
 
 See [docs/docs/tooling/development.md](docs/docs/tooling/development.md) for how to add a rule, a
 strategy, or a view.
+
+### Building a release locally
+
+```powershell
+uv run python tools/build_icon.py                # regenerate icons from the SVG
+uv run flet build windows `
+  --project tidyra --product Tidyra `
+  --org dev.abdulhaque --bundle-id dev.abdulhaque.tidyra `
+  --copyright "MIT License"
+```
+
+The first build downloads the Flutter SDK; subsequent builds reuse the
+cache. macOS and Linux builds work the same way with `flet build macos`
+and `flet build linux`. The entry point is configured in
+`pyproject.toml`'s `[tool.flet.app]` block (`path = "src/tidyra"`,
+`module = "main"`); the build finds `src/tidyra/main.py` (an entry
+shim that re-exports the real `tidyra.presentation.app.main`). See
+[tooling/invariants/tooling.md §10](docs/docs/tooling/invariants/tooling.md#10-cross-platform-packaging--flet-build--github-actions)
+for the full set of flags.
 
 ## Roadmap
 
