@@ -15,7 +15,7 @@ If a domain module needs a side effect, add a Protocol in `domain/` and inject t
 
 ## 2. Frozen dataclasses only
 
-Domain types are `@dataclass(frozen=True)`. No `__post_init__` mutation, no `field(default_factory=...)` for stateful values, no `__eq__` overrides. Identity is value identity.
+Domain types are `@dataclass(frozen=True, slots=True)`. No `__post_init__` mutation, no `field(default_factory=...)` for stateful values, no `__eq__` overrides. Identity is value identity.
 
 ## 3. `Path` is data, not I/O
 
@@ -34,6 +34,19 @@ class OrganizationStrategy(Protocol):
 ```
 
 A strategy is a pure function. Same inputs → same plan. No randomness, no wall-clock dependency, no logging, no I/O. Strategies live under `src/tidyra/domain/` — never under `infrastructure/`.
+
+## 4b. Rule matching policy
+
+`OrganizationRule.matches(extension, name)` is the single source of truth for whether a rule applies. The policy is captured in
+[`domain/rules.py`](../../domain/rules.py) and repeated in
+[`tooling/configuration.md`](../../tooling/configuration.md#how-matching-works):
+
+- `always_matches = true` short-circuits to true.
+- If a rule has **both** `extensions` and `name_patterns`, the file must match **both** (intersection).
+- If a rule has only one, that single condition decides.
+- If a rule has neither, it never matches.
+
+This is the "name AND format together" semantic the user asked for. Templates in `destination` (`{year}`, `{month}`, `{ext}`, `{stem}`) are pure transformations of `FileEntry` fields — never of file contents. The substitution helper is `domain.rules.render_destination`. `{year}` and `{month}` come from `entry.mtime` (POSIX float); we never read EXIF or other metadata.
 
 ## 5. `PlanValidator` is the only safety gate
 

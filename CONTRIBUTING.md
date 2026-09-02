@@ -103,7 +103,15 @@ The domain must never import from Flet, `pathlib` (for mutation), or `tomllib`. 
 
 ## Adding a rule
 
-Open `src/tidyra/resources/default_rules.toml` and append a new `[[rule]]` table. To override a built-in rule for yourself, copy the file to your user config dir and edit it there — see [docs/docs/tooling/configuration.md](docs/docs/tooling/configuration.md) for the path on each OS.
+Open `src/tidyra/resources/default_rules.toml` and append a new
+`[[rule]]` table. A rule can match by extension, by file-name glob, or
+both — see [docs/docs/tooling/configuration.md](docs/docs/tooling/configuration.md)
+for the full schema and the matching policy. Destination strings
+support `{year}`, `{month}`, `{ext}`, and `{stem}` templates.
+
+To override a built-in rule for yourself, copy the file to your user
+config dir and edit it there — same doc, "Where Tidyra looks for
+rules" section, has the per-OS path.
 
 ## Adding a strategy
 

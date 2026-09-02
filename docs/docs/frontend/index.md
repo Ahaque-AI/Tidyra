@@ -29,4 +29,11 @@ src/tidyra/presentation/
 
 ## Brand assets
 
-The Tidyra logo is `src/tidyra/resources/tidyra-logo.svg`. Resolve the path via `from tidyra.presentation.brand import logo_path` — never hard-code the file path, since `importlib.resources` is what makes the asset discoverable under both editable and frozen installs.
+The Tidyra brand has two assets shipped under `src/tidyra/resources/`:
+
+| File | Purpose | Resolver |
+|---|---|---|
+| `tidyra-logo.svg` | Brand source. In-UI rendering, README hero, any future export. | `presentation.brand.logo_path()` |
+| `tidyra-icon.ico` | OS window decoration (Windows title bar / taskbar). Required because Flet 0.86 ignores SVG paths for `page.window.icon`. | `presentation.brand.icon_path()` |
+
+Both come from `importlib.resources`, so they work under editable installs (`uv run`), installed wheels, and frozen binaries. The ICO is procedurally generated from the brand source by `tools/build_icon.py` — regenerate it whenever the SVG palette or proportions change.

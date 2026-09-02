@@ -14,6 +14,10 @@ from tidyra.domain.models import FileEntry
 from tidyra.infrastructure.filesystem import FileSystem
 
 
-def scan_directory(fs: FileSystem, root: Path) -> Sequence[FileEntry]:
-    """Scan a directory through the given filesystem."""
-    return fs.scan(root)
+def scan_directory(fs: FileSystem, root: Path, *, recurse: bool = False) -> Sequence[FileEntry]:
+    """Scan a directory through the given filesystem.
+
+    ``recurse=True`` walks every regular file under ``root``; ``False``
+    keeps the v0.1.0 behaviour (direct children only).
+    """
+    return fs.scan(root, recurse=recurse)

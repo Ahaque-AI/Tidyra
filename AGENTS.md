@@ -39,12 +39,12 @@ For anything related to this repo, check the docs first. Only go into source whe
 
 ## Architectural decisions (ADRs)
 
-When a decision shapes the codebase — new dependency, framework choice, layer boundary, replacement of an existing pattern — capture it. See `docs/docs/processes/invariants/processes.md` for the workflow. Quick version:
+When a decision shapes the codebase — new dependency, framework choice, layer boundary, replacement of an existing pattern, or a change to the rule-matching policy or destination-template semantics — capture it. See `docs/docs/processes/invariants/processes.md` for the workflow. Quick version:
 
 1. Add `docs/docs/adrs/NNNN-<kebab-title>.md` using the MADR template.
 2. Add a row to `docs/docs/adrs/index.md`.
 3. If the decision changes a public doc (README, configuration, etc.), update that doc in the same change.
-4. Link the ADR from any rule doc it touches.
+4. Link the ADR from any rule doc it touches — especially `docs/docs/domain/invariants/domain.md` §4b for domain-layer rule policy, and `docs/docs/tooling/configuration.md` for user-visible rule schema.
 
 ## Session-level rules
 

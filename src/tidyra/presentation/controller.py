@@ -79,9 +79,16 @@ class TidyraApp:
         self.state.loading = True
         self.state.error = None
         self.render()
-        logger.bind(root=str(self.state.root), component="controller").info("scan: started")
+        logger.bind(
+            root=str(self.state.root),
+            recurse=self.state.recurse_subfolders,
+            component="controller",
+        ).info("scan: started")
         try:
-            plan, entries = self.state.service.plan_for(self.state.root)
+            plan, entries = self.state.service.plan_for(
+                self.state.root,
+                recurse=self.state.recurse_subfolders,
+            )
             self.state.plan = plan
             self.state.entries = entries
             self.state.screen = Screen.PREVIEW
@@ -102,6 +109,11 @@ class TidyraApp:
             self.state.screen = Screen.HOME
         finally:
             self.state.loading = False
+        self.render()
+
+    def toggle_recurse(self) -> None:
+        """Flip the recurse-subfolders toggle and re-render."""
+        self.state.recurse_subfolders = not self.state.recurse_subfolders
         self.render()
 
     def organize(self) -> None:

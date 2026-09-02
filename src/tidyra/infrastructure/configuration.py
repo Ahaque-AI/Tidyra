@@ -114,9 +114,10 @@ class ConfigService:
         if not isinstance(ext_list, list):
             raise ValueError(f"rule {name!r} 'extensions' must be a list")
         extensions = frozenset(str(e).lower() for e in ext_list if isinstance(e, str))
-        patterns = entry.get("patterns", [])
-        if not isinstance(patterns, list):
-            raise ValueError(f"rule {name!r} 'patterns' must be a list")
+        name_patterns_raw = entry.get("name_patterns", entry.get("patterns", []))
+        if not isinstance(name_patterns_raw, list):
+            raise ValueError(f"rule {name!r} 'name_patterns' must be a list")
+        name_patterns = tuple(str(p) for p in name_patterns_raw if isinstance(p, str))
         priority = entry.get("priority", 0)
         if not isinstance(priority, int):
             raise ValueError(f"rule {name!r} 'priority' must be an integer")
@@ -127,7 +128,7 @@ class ConfigService:
             name=name,
             destination=destination,
             extensions=extensions,
-            patterns=tuple(str(p) for p in patterns),
+            name_patterns=name_patterns,
             priority=priority,
             always_matches=always_matches,
         )

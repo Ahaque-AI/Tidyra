@@ -42,7 +42,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/tidyra"]
-artifacts = ["src/tidyra/resources/*.toml", "src/tidyra/resources/*.svg"]
+artifacts = ["src/tidyra/resources/*.toml", "src/tidyra/resources/*.svg", "src/tidyra/resources/*.ico"]
 
 [tool.ruff]
 line-length = 100

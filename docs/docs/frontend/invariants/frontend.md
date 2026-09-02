@@ -34,6 +34,15 @@ This makes the asset portable under editable installs (`uv run`) and frozen whee
 
 `page.window.icon` and `page.title` are set once, in `app.py:main`. Adding a new window attribute? Set it there — do not duplicate the page-config calls in views.
 
+### Window icon is the `.ico`, not the SVG
+
+Flet 0.86's `Window.icon` source says verbatim:
+
+> The file should have the `.ico` extension.
+> Limitation: Has effect on Windows only.
+
+SVG paths are silently ignored on Windows — the OS title bar falls back to the Flet engine binary's own icon. Use `presentation.brand.icon_path()`, which returns the procedurally generated `tidyra-icon.ico`. The SVG (`logo_path()`) drives in-UI rendering only. Regenerate the ICO with `uv run python tools/build_icon.py` whenever the SVG palette or proportions change. Captured in [known-issues/fix-log-2026-09-02.md](../../known-issues/fix-log-2026-09-02.md).
+
 ## 5. Flet 0.86+ service-registration rule (do not regress)
 
 `Service` subclasses (`FilePicker`, `UrlLauncher`, `Audio`, `Clipboard`, `Geolocator`, …) MUST be added to `page.services`, NOT `page.overlay`. The old pattern still runs but produces two distinct failures:

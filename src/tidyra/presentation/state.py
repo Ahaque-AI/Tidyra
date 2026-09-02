@@ -28,7 +28,7 @@ class UIState:
     """Mutable view-local state.
 
     Domain objects flow through unchanged. Only screen navigation,
-    loading flags, and user-facing errors live here.
+    loading flags, user-facing errors, and view-local toggles live here.
     """
 
     service: OrganizeService
@@ -39,6 +39,10 @@ class UIState:
     screen: Screen = Screen.HOME
     loading: bool = False
     error: str | None = None
+    # ``recurse_subfolders`` defaults to True so the first scan walks the
+    # tree by default — matches the user's expectation that Tidyra
+    # organises the whole chosen root, not just its direct children.
+    recurse_subfolders: bool = True
     on_navigate: Callable[[], None] | None = field(default=None, repr=False)
 
     def go(self, screen: Screen) -> None:

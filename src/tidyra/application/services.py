@@ -56,13 +56,24 @@ class OrganizeService:
         """Where the user can drop their own ``rules.toml``."""
         return self._config.default_config_path()
 
-    def plan_for(self, root: Path) -> tuple[OrganizationPlan, Sequence[FileEntry]]:
+    def plan_for(
+        self,
+        root: Path,
+        *,
+        recurse: bool = True,
+    ) -> tuple[OrganizationPlan, Sequence[FileEntry]]:
         """Scan ``root`` and produce a validated plan.
+
+        ``recurse=True`` walks every regular file under ``root`` and
+        preserves the relative subfolder structure inside each rule's
+        destination (e.g. ``Downloads/2024/photo.jpg`` lands at
+        ``Photos/2024/photo.jpg``). ``recurse=False`` matches the
+        v0.1.0 behaviour — only direct children of ``root`` are scanned.
 
         Returns both the plan and the entries so the UI can show the
         scanner's view without re-scanning.
         """
-        entries = scan_directory(self._fs, root)
+        entries = scan_directory(self._fs, root, recurse=recurse)
         validator = PlanValidator(root=root, destination_exists=self._fs.exists)
         strategy = RuleBasedStrategy(validator=validator)
         plan = strategy.create_plan(root=root, entries=entries, rules=self.rules())
@@ -71,6 +82,7 @@ class OrganizeService:
         logger.bind(
             root=str(root),
             entries=len(entries),
+            recurse=recurse,
             to_move=len(moves),
             skipped=len(skips),
             component="service",

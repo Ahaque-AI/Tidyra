@@ -52,6 +52,25 @@ def home_view(app: TidyraApp) -> ft.Control:
             color=ft.Colors.GREY,
         ),
         folder_picker(path=str(state.root) if state.root else None, on_pick=app.pick_folder),
+        ft.Container(
+            content=ft.Row(
+                controls=[
+                    ft.Switch(
+                        label="Recurse into subfolders",
+                        value=state.recurse_subfolders,
+                        on_change=lambda _e: app.toggle_recurse(),
+                    ),
+                    ft.Text(
+                        "Walks every file under the chosen root and keeps the relative folder layout inside each rule destination.",
+                        color=ft.Colors.GREY,
+                        size=11,
+                    ),
+                ],
+                spacing=12,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            ),
+            padding=ft.Padding.symmetric(vertical=8),
+        ),
         ft.Divider(),
     ]
 

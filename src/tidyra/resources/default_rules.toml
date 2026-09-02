@@ -1,27 +1,77 @@
 # Tidyra — built-in default rules.
 #
 # Override any of these by dropping your own rules.toml at the user config
-# directory (run `uv run python -c "from tidyra.infrastructure.configuration
-# import get_config_service; print(get_config_service().default_config_path())"`
-# to see where that is on your machine) or a rules.toml in the current
-# working directory. User rules override defaults by `name`.
+# directory or a rules.toml in the current working directory. User rules
+# override defaults by `name`.
+#
+# Rule schema (TOML):
+#
+#   [[rule]]
+#   name           — stable identifier (overrides by name)
+#   destination    — folder relative to the scan root; supports
+#                    templates `{year}`, `{month}`, `{ext}`, `{stem}`
+#                    expanded from each file's mtime/name.
+#   extensions     — optional list of file extensions this rule matches
+#                    (e.g. `[".jpg", ".png"]`). Case-insensitive.
+#   name_patterns  — optional list of glob patterns the file name must
+#                    match. Case-insensitive. Use `["*"]` for a catch-all.
+#   priority       — higher wins; ties produce RULE_CONFLICT.
+#
+# Matching order for one file (highest priority first, declared order as a
+# tiebreaker):
+#   1. `always_matches == true` rules (legacy form — prefer patterns = ["*"])
+#   2. rules whose `extensions` contain the file's extension
+#   3. rules whose `name_patterns` glob-match the file's name
+#
+# The catch-all is the rule with `priority = 0` and `name_patterns = ["*"]`.
+# Files that match no rule appear in the preview as `unmatched` and are
+# not moved — see the configuration docs for the schema.
+
+# ----- Trips: high-priority vacation photos beat the generic photo rule -----
 
 [[rule]]
-name = "images"
-destination = "Images"
-extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".svg", ".heic"]
-priority = 10
+name = "vacation-photos"
+destination = "Photos/Trips/Vacation"
+name_patterns = ["*vacation*", "*trip*", "*holiday*"]
+extensions = [".jpg", ".jpeg", ".png", ".heic", ".mov", ".mp4"]
+priority = 50
+
+# ----- Specific document-class heuristics -----
 
 [[rule]]
-name = "documents"
-destination = "Documents"
-extensions = [".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".odt", ".md", ".rtf", ".csv", ".epub"]
-priority = 10
+name = "tax-documents"
+destination = "Documents/Finance/Tax/{year}"
+name_patterns = ["*tax*", "*1099*", "*w-2*", "*w2*"]
+priority = 45
+
+[[rule]]
+name = "invoices"
+destination = "Documents/Finance/Invoices"
+name_patterns = ["*invoice*", "*receipt*", "*bill*"]
+priority = 40
+
+# ----- Screenshots: detected by name on any platform -----
+
+[[rule]]
+name = "screenshots"
+destination = "Screenshots"
+name_patterns = ["Screenshot*", "Screen Shot*", "Capture*", "Snip*"]
+priority = 30
+
+# ----- RAW photos win over generic photo bucketing -----
+
+[[rule]]
+name = "raw-photos"
+destination = "Photos/RAW"
+extensions = [".cr2", ".cr3", ".nef", ".arw", ".dng", ".orf", ".rw2", ".raw"]
+priority = 25
+
+# ----- Generic media categories -----
 
 [[rule]]
 name = "music"
 destination = "Music"
-extensions = [".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a", ".opus", ".wma"]
+extensions = [".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a", ".opus", ".wma", ".aiff"]
 priority = 10
 
 [[rule]]
@@ -37,6 +87,12 @@ extensions = [".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar", ".tgz"]
 priority = 10
 
 [[rule]]
+name = "documents"
+destination = "Documents"
+extensions = [".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".odt", ".md", ".rtf", ".csv", ".epub"]
+priority = 10
+
+[[rule]]
 name = "applications"
 destination = "Applications"
 extensions = [".exe", ".msi", ".dmg", ".pkg", ".deb", ".rpm", ".apk", ".appimage"]
@@ -45,12 +101,33 @@ priority = 10
 [[rule]]
 name = "code"
 destination = "Code"
-extensions = [".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java", ".kt", ".swift", ".c", ".cpp", ".h", ".hpp", ".cs", ".rb", ".php", ".sh", ".ps1", ".html", ".css", ".scss", ".sql", ".yaml", ".yml", ".json", ".toml", ".xml"]
+extensions = [
+  ".py", ".js", ".ts", ".tsx", ".jsx",
+  ".go", ".rs", ".java", ".kt", ".swift",
+  ".c", ".cpp", ".h", ".hpp", ".cs",
+  ".rb", ".php", ".sh", ".ps1",
+  ".html", ".css", ".scss",
+  ".sql", ".yaml", ".yml", ".json", ".toml", ".xml",
+]
 priority = 10
 
-# Catch-all — anything not matched above ends up here. Always matches.
+# ----- Photos by year (mtime proxy). Falls below RAW and vacations
+#       but above the flat "Photos" bucket, so non-RAW images land in
+#       year-organized folders while high-priority rules override. -----
+
+[[rule]]
+name = "photos-by-year"
+destination = "Photos/{year}"
+extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".heic"]
+priority = 5
+
+# ----- Catch-all: every other file → Misc. Priority 0 is the lowest
+#       so anything more specific overrides it. `name_patterns = ["*"]`
+#       matches every filename (equivalent to the legacy
+#       `always_matches = true`). -----
+
 [[rule]]
 name = "other"
 destination = "Misc"
+name_patterns = ["*"]
 priority = 0
-always_matches = true

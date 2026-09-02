@@ -17,7 +17,7 @@ from typing import Protocol
 
 from tidyra.domain.models import FileEntry
 from tidyra.domain.plans import FileOperation, OrganizationPlan, PlanValidator, SkipReason
-from tidyra.domain.rules import OrganizationRule
+from tidyra.domain.rules import OrganizationRule, render_destination
 
 
 class OrganizationStrategy(Protocol):
@@ -98,7 +98,7 @@ class RuleBasedStrategy:
                 skip_reason=SkipReason.RULE_CONFLICT,
             )
 
-        destination = root / top.destination / entry.name
+        destination = root / render_destination(top.destination, entry) / entry.name
         return FileOperation(
             source=entry.path,
             destination=destination,
