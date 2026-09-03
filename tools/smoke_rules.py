@@ -103,20 +103,14 @@ for op in plan.operations:
     status = "EXECUTE" if op.will_execute else f"SKIP({op.skip_reason})"
     print(f"  [{status}] {op.source.name:35s} -> {rel}   (rule={op.rule_name})")
 
-# Expectations:
-# - IMG_vacation_2024.jpg → Photos/Trips/Vacation/...
-# - Screenshot *.png → Screenshots/...
-# - tax-return-2024.pdf → Documents/Finance/Tax/2024/...
-# - IMG_20240315... → Photos/2024/...
-# - song.mp3 → Music/...
-# - mystery.xyz → Misc/...
+# Expectations use the current date-first destination contract.
 expected = {
-    "IMG_vacation_2024.jpg": "Photos/Trips/Vacation",
-    "Screenshot 2024-01-02 123456.png": "Screenshots",
-    "tax-return-2024.pdf": "Documents/Finance/Tax/2024",
-    "IMG_20240315_143022.jpg": "Photos/2024",
-    "song.mp3": "Music",
-    "mystery.xyz": "Misc",
+    "IMG_vacation_2024.jpg": "2024-06-15 — 15 June 2024/Photos/Trips/Vacation",
+    "Screenshot 2024-01-02 123456.png": "2024-01-02 — 2 January 2024/Images/Screenshots",
+    "tax-return-2024.pdf": "2024-04-10 — 10 April 2024/Documents/Finance/Tax",
+    "IMG_20240315_143022.jpg": "2024-03-15 — 15 March 2024/Images",
+    "song.mp3": "2023-12-01 — 1 December 2023/Music",
+    "mystery.xyz": "2024-01-01 — 1 January 2024/Misc",
 }
 
 print("\nExpectation check:")
@@ -136,4 +130,6 @@ for op in plan.operations:
     ok = ok and pass_
     mark = "PASS" if pass_ else "FAIL"
     print(f"  [{mark}] {op.source.name:35s} want={want!r:35s}  got={got!r}")
-print("\nALL GOOD" if ok else "SOME FAILED")
+if not ok:
+    raise SystemExit("SOME FAILED")
+print("\nALL GOOD")

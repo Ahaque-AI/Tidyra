@@ -35,7 +35,7 @@
 [[rule]]
 name = "vacation-photos"
 destination = "{date}/Photos/Trips/Vacation"
-name_regexes = ["\\b(vacation|trip|holiday)\\b"]
+name_regexes = ["(vacation|trip|holiday)"]
 extensions = [".jpg", ".jpeg", ".png", ".heic", ".mov", ".mp4"]
 priority = 50
 

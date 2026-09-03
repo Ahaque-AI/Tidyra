@@ -6,6 +6,7 @@ Bug-fix writeups and incident notes. Append-only, ordered by date. AGENTS.md sta
 
 | Date | File | Summary |
 |---|---|---|
+| 2026-09-03 | [fix-log-2026-09-03.md](fix-log-2026-09-03.md) | CI smoke expectations and failure signaling aligned with date-first routing |
 | 2026-09-02 | [fix-log-2026-09-02.md](fix-log-2026-09-02.md) | `FilePicker` service registration; nested-scroll removal on Preview/Results |
 
 ## Authoring rule
