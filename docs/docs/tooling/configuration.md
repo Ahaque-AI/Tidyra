@@ -47,6 +47,7 @@ priority = 30
 | `extensions` | no | list of strings | File extensions to match (with leading dot, lowercase). |
 | `name_patterns` | no | list of strings | Glob patterns the file name must match (case-insensitive). E.g. `["Screenshot*", "*vacation*"]`. |
 | `name_regexes` | no | list of strings | Case-insensitive regular expressions matched against the file name. E.g. `["\\b(invoice|receipt)\\b"]`. |
+| `topic_regex` | no | string | Case-insensitive regex with a named `(?P<topic>...)` capture. Use `{topic}` in `destination` to group related files under the captured name. |
 | `patterns` | no | list of strings | Legacy alias for `name_patterns`. New configs should use `name_patterns`. |
 | `priority` | no | integer | Higher wins. Default `0`. Built-ins use `10`; catch-all `0`. |
 | `always_matches` | no | boolean | Legacy. Equivalent to `name_patterns = ["*"]`. Kept so v0.1.0 configs still parse. Prefer `name_patterns` for new rules. |
@@ -59,6 +60,7 @@ A rule matches a file when **any** of its matchers hit:
 - `extensions` lists file extensions; the file's extension (case-insensitive) must be in the list.
 - `name_patterns` lists glob patterns; the file's name is matched against each pattern with `fnmatch` (case-insensitive).
 - `name_regexes` lists regular expressions; the file's name is searched case-insensitively. Regexes and glob patterns are alternative name matchers.
+- `topic_regex` is also a name matcher. When it matches, its named `topic` capture is available as `{topic}`. Unsafe path characters are replaced before a folder is created.
 
 When a rule sets **both** `extensions` and a name matcher, the file must satisfy **both** (intersection). This is the deterministic topic-and-format semantic — a rule like
 
@@ -113,6 +115,25 @@ priority = 40
 
 This rule does not route every PDF: it routes only a PDF, DOCX, or XLSX whose filename matches the explicit topic regex. Give topic rules a higher priority than generic category rules. A same-priority tie is intentionally skipped as `RULE_CONFLICT`; changing the TOML order never silently chooses a file's destination.
 
+### Grouping an application by name
+
+Use a named capture when several files belong to one application or project.
+The capture is the folder name, so files such as `arango.exe`, `arango.dll`,
+and `arango.conf` land together:
+
+```toml
+[[rule]]
+name = "arango-application"
+destination = "{date}/Applications/{topic}"
+topic_regex = "(?P<topic>arango)"
+extensions = [".exe", ".dll", ".conf", ".json"]
+priority = 60
+```
+
+This is deterministic grouping, not semantic similarity: add one rule per
+known product/project name or use a deliberately narrow regex. A topic capture
+cannot create a folder outside the selected root.
+
 Unknown templates are kept as literal text (`{unknown}`) so the user can see what they got wrong instead of a silent substitution. Folders that don't yet exist are created on demand by the executor.
 
 ## Built-in defaults
@@ -126,6 +147,7 @@ The shipped rule set covers the common Downloads use case:
 | `invoices` | `{date}/Documents/Finance/Invoices` | 40 | invoice/receipt/bill regex |
 | `screenshots` | `{date}/Images/Screenshots` | 30 | screenshot/capture regex |
 | `raw-photos` | `{date}/Photos/RAW` | 25 | `.cr2 .cr3 .nef .arw .dng .orf .rw2 .raw` |
+| `application-bundles` | `{date}/Applications/{topic}` | 20 | shared application-name prefix + app extensions |
 | `music` | `{date}/Music` | 10 | audio extensions |
 | `videos` | `{date}/Videos` | 10 | video extensions |
 | `archives` | `{date}/Archives` | 10 | archive extensions |

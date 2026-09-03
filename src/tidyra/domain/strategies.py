@@ -98,7 +98,11 @@ class RuleBasedStrategy:
                 skip_reason=SkipReason.RULE_CONFLICT,
             )
 
-        destination = root / render_destination(top.destination, entry) / entry.name
+        destination = (
+            root
+            / render_destination(top.destination, entry, topic=top.topic_for(entry.name))
+            / entry.name
+        )
         date_folder = (
             root / render_destination("{date}", entry)
             if top.destination.startswith("{date}")

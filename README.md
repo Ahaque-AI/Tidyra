@@ -17,6 +17,9 @@ nothing is overwritten silently, and the preview is a real
   photos, invoices, tax documents, music, videos, archives, code,
   and a `Misc/` catch-all. Rules can match on extension, file name
   glob, or both. Override or extend via TOML.
+- **Meaningful name groups.** A named regex capture such as `arango` can
+  group an application's `.exe`, `.dll`, and configuration files in one
+  `Applications/arango/` folder without an LLM.
 - **Date and format folders with deterministic templates.**
   `{date}` is always first, creating paths such as
   `2026-12-12 — 12 December 2026/Documents/`. The sortable ISO prefix

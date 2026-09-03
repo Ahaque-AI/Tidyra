@@ -11,12 +11,13 @@ A rule matches a file when its configured matcher groups hit:
   (case-insensitive ``fnmatch``)
 - the file's name matches one of the ``name_regexes``
   (case-insensitive regular-expression search)
+- an optional ``topic_regex`` matches and captures a named ``topic`` group
 
 The first rule at the highest ``priority`` wins. Ties at the same priority
 are flagged as ``RULE_CONFLICT`` and skipped.
 
 ``destination`` may contain template variables that resolve from the file
-itself (``{date}``, ``{year}``, ``{month}``, ``{ext}``, ``{stem}``). The
+itself (``{date}``, ``{year}``, ``{month}``, ``{ext}``, ``{stem}``, ``{topic}``). The
 substitution helper lives in :func:`render_destination`.
 
 ``always_matches`` is retained for backward compatibility with v0.1.0
@@ -48,6 +49,8 @@ class OrganizationRule:
             ``["*"]`` is the explicit catch-all.
         name_regexes: Regular expressions (case-insensitive) searched in the
             file name. They are an alternative to ``name_patterns``.
+        topic_regex: Optional regular expression with a named ``topic`` group.
+            The captured value can be used with ``{topic}`` in a destination.
         priority: Higher wins. Built-ins default to ``10``; catch-alls to ``0``.
         always_matches: Deprecated. Kept so older configs still parse —
             equivalent to ``name_patterns = ['*']`` for matching purposes.
@@ -58,6 +61,7 @@ class OrganizationRule:
     extensions: frozenset[str] = field(default_factory=frozenset)
     name_patterns: tuple[str, ...] = ()
     name_regexes: tuple[str, ...] = ()
+    topic_regex: str | None = None
     priority: int = 0
     always_matches: bool = False
 
@@ -85,7 +89,11 @@ class OrganizationRule:
         name_match = any(
             fnmatch.fnmatchcase(lowered, pattern.lower()) for pattern in self.name_patterns
         ) or any(re.search(pattern, name, flags=re.IGNORECASE) is not None for pattern in self.name_regexes)
-        has_name_matcher = bool(self.name_patterns or self.name_regexes)
+        topic_match = self.topic_regex is not None and re.search(
+            self.topic_regex, name, flags=re.IGNORECASE
+        ) is not None
+        has_name_matcher = bool(self.name_patterns or self.name_regexes or self.topic_regex)
+        name_match = name_match or topic_match
 
         if self.extensions and has_name_matcher:
             return ext_match and name_match
@@ -103,12 +111,30 @@ class OrganizationRule:
             extensions=extensions,
             name_patterns=self.name_patterns,
             name_regexes=self.name_regexes,
+            topic_regex=self.topic_regex,
             priority=self.priority,
             always_matches=self.always_matches,
         )
 
+    def topic_for(self, name: str) -> str | None:
+        """Return a safe named topic captured by ``topic_regex``."""
+        if self.topic_regex is None:
+            return None
+        match = re.search(self.topic_regex, name, flags=re.IGNORECASE)
+        if match is None:
+            return None
+        topic = match.groupdict().get("topic")
+        if not topic:
+            return None
+        cleaned = re.sub(r"[^A-Za-z0-9 _.-]+", "_", topic).strip(" .")
+        if not cleaned or cleaned.upper() in {"CON", "PRN", "AUX", "NUL"}:
+            return None
+        return cleaned
 
-def render_destination(template: str, entry: FileEntry) -> str:
+
+def render_destination(
+    template: str, entry: FileEntry, *, topic: str | None = None
+) -> str:
     """Expand ``{date}``, ``{year}``, ``{month}``, ``{ext}``, ``{stem}``.
 
     Unknown placeholders are left as literal text so the user sees what
@@ -127,6 +153,7 @@ def render_destination(template: str, entry: FileEntry) -> str:
         "month": f"{moment.month:02d}",
         "ext": entry.extension.lstrip(".").lower() or "file",
         "stem": entry.stem,
+        "topic": topic or "{topic}",
     }
     out: list[str] = []
     i = 0

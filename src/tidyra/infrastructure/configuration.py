@@ -11,6 +11,7 @@ Domain code never sees TOML types — only ``OrganizationRule`` dataclasses.
 
 from __future__ import annotations
 
+import re
 import tomllib
 import re
 from collections.abc import Sequence
@@ -128,6 +129,16 @@ class ConfigService:
                 re.compile(pattern)
             except re.error as exc:
                 raise ValueError(f"rule {name!r} has invalid regular expression {pattern!r}") from exc
+        topic_regex_raw = entry.get("topic_regex")
+        if topic_regex_raw is not None and not isinstance(topic_regex_raw, str):
+            raise ValueError(f"rule {name!r} 'topic_regex' must be a string")
+        if isinstance(topic_regex_raw, str):
+            try:
+                compiled_topic = re.compile(topic_regex_raw)
+            except re.error as exc:
+                raise ValueError(f"rule {name!r} has invalid 'topic_regex'") from exc
+            if "topic" not in compiled_topic.groupindex:
+                raise ValueError(f"rule {name!r} 'topic_regex' must capture a named 'topic' group")
         priority = entry.get("priority", 0)
         if not isinstance(priority, int):
             raise ValueError(f"rule {name!r} 'priority' must be an integer")
@@ -140,6 +151,7 @@ class ConfigService:
             extensions=extensions,
             name_patterns=name_patterns,
             name_regexes=name_regexes,
+            topic_regex=topic_regex_raw,
             priority=priority,
             always_matches=always_matches,
         )

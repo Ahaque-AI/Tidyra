@@ -17,6 +17,8 @@
 #                    match. Case-insensitive. Use `["*"]` for a catch-all.
 #   name_regexes   — optional list of case-insensitive regular expressions
 #                    matched against the file name.
+#   topic_regex    — optional case-insensitive regex with a named `topic`
+#                    capture; use that capture as `{topic}` in destination.
 #   priority       — higher wins; ties produce RULE_CONFLICT.
 #
 # Matching is deterministic: glob patterns and regular expressions are
@@ -68,6 +70,15 @@ extensions = [".cr2", ".cr3", ".nef", ".arw", ".dng", ".orf", ".rw2", ".raw"]
 priority = 25
 
 # ----- Generic media categories -----
+
+# ----- Application bundles: shared name prefix becomes the topic folder. -----
+
+[[rule]]
+name = "application-bundles"
+destination = "{date}/Applications/{topic}"
+topic_regex = "^(?P<topic>[A-Za-z][A-Za-z0-9]*)(?:[-_. ]|$)"
+extensions = [".exe", ".msi", ".dll", ".sys", ".pdb", ".bin", ".dat", ".conf", ".ini"]
+priority = 20
 
 [[rule]]
 name = "music"
