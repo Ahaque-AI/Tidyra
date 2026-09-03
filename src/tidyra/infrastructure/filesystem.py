@@ -8,8 +8,9 @@ an in-memory fake without ever touching a developer machine.
 
 from __future__ import annotations
 
-from errno import EEXIST, ENOTEMPTY
+import os
 import shutil
+from errno import EEXIST, ENOTEMPTY
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol, runtime_checkable
@@ -68,6 +69,10 @@ class FileSystem(Protocol):
 
     def remove_empty_directory(self, path: Path) -> bool:
         """Remove ``path`` only when it is still an empty, real directory."""
+        ...
+
+    def set_modified_time(self, path: Path, timestamp: float) -> bool:
+        """Set a real directory's modified time without following links."""
         ...
 
 
@@ -166,6 +171,13 @@ class LocalFileSystem:
                 return False
             raise
         logger.bind(path=str(path), component="filesystem").info("removed empty directory")
+        return True
+
+    def set_modified_time(self, path: Path, timestamp: float) -> bool:
+        if _is_link_or_junction(path) or not path.is_dir():
+            return False
+        os.utime(path, (timestamp, timestamp))
+        logger.bind(path=str(path), component="filesystem").debug("set directory modified time")
         return True
 
     @staticmethod

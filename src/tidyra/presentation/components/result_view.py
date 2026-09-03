@@ -19,6 +19,7 @@ def result_view(result: OrganizationResult) -> ft.Control:
     moved = len(result.succeeded) - len(result.failures)
     failed = len(result.failures)
     removed_directories = len(result.removed_directories)
+    date_updates = len(result.plan.date_folder_updates())
     skipped = len(result.plan.skipped())
 
     summary = ft.Container(
@@ -33,6 +34,16 @@ def result_view(result: OrganizationResult) -> ft.Control:
                         ),
                     ]
                     if failed
+                    else []
+                ),
+                *(
+                    [
+                        ft.Chip(
+                            label=ft.Text(f"{date_updates} date folders refreshed"),
+                            bgcolor=ft.Colors.GREY_200,
+                        )
+                    ]
+                    if date_updates
                     else []
                 ),
                 ft.Chip(label=ft.Text(f"{skipped} skipped"), bgcolor=ft.Colors.GREY_200),

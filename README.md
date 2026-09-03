@@ -21,6 +21,8 @@ nothing is overwritten silently, and the preview is a real
   `{date}` is always first, creating paths such as
   `2026-12-12 — 12 December 2026/Documents/`. The sortable ISO prefix
   keeps folder viewers in chronological order while preserving a readable date.
+  Tidyra also sets each date folder's modified time from its files, so Explorer
+  can sort those folders by **Date modified** descending.
 - **Three-step workflow.** Pick a folder → preview the plan → confirm
   to organize. Nothing happens until you press the button.
 - **Optional recursive scan.** Walk every file under the chosen root

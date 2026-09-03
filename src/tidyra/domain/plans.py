@@ -43,6 +43,8 @@ class FileOperation:
     destination: Path
     rule_name: str | None = None
     skip_reason: SkipReason | None = None
+    date_folder: Path | None = None
+    source_mtime: float | None = None
 
     @property
     def will_execute(self) -> bool:
@@ -74,8 +76,21 @@ class OrganizationPlan:
     def skipped(self) -> tuple[FileOperation, ...]:
         return tuple(op for op in self.operations if not op.will_execute)
 
+    def date_folder_updates(self) -> tuple[Path, ...]:
+        """Date folders whose modified times can be refreshed from planned files."""
+        seen: set[Path] = set()
+        for op in self.operations:
+            if op.skip_reason not in {None, SkipReason.NO_OP} or op.date_folder is None:
+                continue
+            seen.add(op.date_folder)
+        return tuple(sorted(seen))
+
     def is_empty(self) -> bool:
-        return not any(op.will_execute for op in self.operations) and not self.directory_removals
+        return (
+            not any(op.will_execute for op in self.operations)
+            and not self.directory_removals
+            and not self.date_folder_updates()
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,7 +180,13 @@ class PlanValidator:
         if self._destination_exists(destination):
             return self._with_skip(op, source, destination, SkipReason.DESTINATION_EXISTS)
 
-        return dataclasses.replace(op, source=source, destination=destination)
+        date_folder = self._safe_date_folder(op.date_folder)
+        return dataclasses.replace(
+            op,
+            source=source,
+            destination=destination,
+            date_folder=date_folder,
+        )
 
     @staticmethod
     def _is_within(path: Path, root: Path) -> bool:
@@ -179,6 +200,12 @@ class PlanValidator:
         """Allow only non-root directories lexically contained by the plan root."""
         resolved = path.resolve()
         return resolved != self._root and self._is_within(resolved, self._root)
+
+    def _safe_date_folder(self, path: Path | None) -> Path | None:
+        if path is None:
+            return None
+        resolved = path.resolve()
+        return resolved if resolved != self._root and self._is_within(resolved, self._root) else None
 
     @staticmethod
     def _with_skip(

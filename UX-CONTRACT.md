@@ -15,3 +15,11 @@ Source: [ADR-0011](docs/docs/adrs/0011-explicit-empty-directory-cleanup.md).
 The operation is a hard directory removal only when the operating system
 confirms the directory is empty. Tidyra never deletes files or recursively
 deletes a directory.
+
+## Date-folder refresh
+
+Source: [ADR-0013](docs/docs/adrs/0013-date-folder-modified-times.md).
+
+The preview lists date folders whose **Date modified** values will be refreshed
+from their routed files. If no files need moving, the final action reads
+**Refresh Date Folder Times**. Tidyra does not change **Date created**.

@@ -95,6 +95,8 @@ When more than one rule matches the same file:
 
 Date is the first destination segment. For example, `{date}/Documents/Finance/Tax` resolves to `2024-04-10 — 10 April 2024/Documents/Finance/Tax` for a file last updated on 10 April 2024. The `YYYY-MM-DD` prefix makes alphabetical folder viewers sort dates chronologically. **Note:** every date template uses the file's `mtime` (last modified), not its download or true creation date. Download dates are not consistently available across filesystems, so Tidyra does not guess or inspect file contents.
 
+After a successful move to a date-first destination, Tidyra sets that date folder's **Date modified** value to the newest file timestamp in the folder. Date folders that already contain correctly routed files are listed for a metadata-only refresh, so they can be corrected without moving files again. In Explorer, select **Sort by → Date modified → Descending** to show newest date folders first. Tidyra does not change **Date created**.
+
 ## Deterministic routing recipe
 
 Use the folder path to describe the outcome and a regular expression when you mean a specific topic. There is no hidden relevance score or LLM: the same file and rules always produce the same destination. Built-in destinations do not create format folders.

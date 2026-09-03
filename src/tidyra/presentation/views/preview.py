@@ -22,6 +22,7 @@ def preview_view(app: TidyraApp) -> ft.Control:
 
     moves = len(state.plan.to_execute())
     removals = len(state.plan.directory_removals)
+    date_updates = len(state.plan.date_folder_updates())
 
     header = ft.Container(
         content=ft.Column(
@@ -48,6 +49,17 @@ def preview_view(app: TidyraApp) -> ft.Control:
                     if removals
                     else []
                 ),
+                *(
+                    [
+                        ft.Text(
+                            f"{date_updates} date folder(s) will have Date modified refreshed.",
+                            color=ft.Colors.GREY,
+                            size=11,
+                        )
+                    ]
+                    if date_updates
+                    else []
+                ),
             ],
             spacing=4,
         ),
@@ -63,10 +75,16 @@ def preview_view(app: TidyraApp) -> ft.Control:
             ),
             ft.Container(expand=True),
             ft.ElevatedButton(
-                "Organize Files and Remove Empty Folders" if removals else "Organize Files",
+                (
+                    "Organize Files and Remove Empty Folders"
+                    if removals
+                    else "Refresh Date Folder Times"
+                    if moves == 0 and date_updates
+                    else "Organize Files"
+                ),
                 icon=ft.Icons.CHECK,
                 on_click=lambda _e: app.organize(),
-                disabled=(moves == 0 and removals == 0) or state.loading,
+                disabled=(moves == 0 and removals == 0 and date_updates == 0) or state.loading,
             ),
         ],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,

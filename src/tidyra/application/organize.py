@@ -11,7 +11,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from tidyra.domain.plans import FileOperation, OrganizationPlan, OrganizationResult
+from tidyra.domain.plans import FileOperation, OrganizationPlan, OrganizationResult, SkipReason
 from tidyra.infrastructure.filesystem import FileSystem
 
 
@@ -36,6 +36,17 @@ class OrganizeExecutor:
         ).info("execute: starting plan")
 
         failures: list[tuple[FileOperation, Exception]] = []
+        date_folder_times: dict[Path, float] = {}
+        for op in plan.operations:
+            if (
+                op.skip_reason in {None, SkipReason.NO_OP}
+                and op.date_folder is not None
+                and op.source_mtime is not None
+            ):
+                prior = date_folder_times.get(op.date_folder)
+                date_folder_times[op.date_folder] = (
+                    op.source_mtime if prior is None else max(prior, op.source_mtime)
+                )
         for op in to_execute:
             log = logger.bind(
                 source=str(op.source),
@@ -50,6 +61,14 @@ class OrganizeExecutor:
             except Exception as exc:
                 log.bind(error_type=type(exc).__name__).exception("move failed")
                 failures.append((op, exc))
+
+        for path, timestamp in date_folder_times.items():
+            try:
+                self._fs.set_modified_time(path, timestamp)
+            except Exception as exc:
+                logger.bind(
+                    path=str(path), error_type=type(exc).__name__, component="executor"
+                ).exception("set date folder modified time failed")
 
         removed_directories: list[Path] = []
         directory_removal_failures: list[tuple[Path, Exception]] = []

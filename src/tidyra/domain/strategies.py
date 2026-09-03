@@ -99,10 +99,17 @@ class RuleBasedStrategy:
             )
 
         destination = root / render_destination(top.destination, entry) / entry.name
+        date_folder = (
+            root / render_destination("{date}", entry)
+            if top.destination.startswith("{date}")
+            else None
+        )
         return FileOperation(
             source=entry.path,
             destination=destination,
             rule_name=top.name,
+            date_folder=date_folder,
+            source_mtime=entry.mtime,
         )
 
 
