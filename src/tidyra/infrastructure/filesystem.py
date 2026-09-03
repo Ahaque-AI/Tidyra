@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import os
 import shutil
-from errno import EEXIST, ENOTEMPTY
 from collections.abc import Sequence
+from errno import EEXIST, ENOTEMPTY
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 

@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import re
 import tomllib
-import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
