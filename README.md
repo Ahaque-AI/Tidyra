@@ -13,13 +13,13 @@ nothing is overwritten silently, and the preview is a real
 ## Features
 
 - **Rule-based classification — names and formats together.** Ships
-  with sensible defaults for vacation photos, screenshots, RAW
-  photos, invoices, tax documents, music, videos, archives, code,
-  and a `Misc/` catch-all. Rules can match on extension, file name
-  glob, or both. Override or extend via TOML.
-- **Meaningful name groups.** A named regex capture such as `arango` can
-  group an application's `.exe`, `.dll`, and configuration files in one
-  `Applications/arango/` folder without an LLM.
+  with specific destinations for recognizable projects, coursework,
+  resumes, research, reports, finance documents, media, and source-code
+  languages. Rules can match on extension, file name, or both.
+- **Meaningful folders, honest uncertainty.** ArangoDB files and Agentic
+  Coding Platforms coursework get named project folders; Python lands in
+  `Code/Python/`. Files whose names reveal nothing useful go to
+  `Needs Review/<extension>/` instead of a misleading `Misc/` bucket.
 - **Date and format folders with deterministic templates.**
   `{date}` is always first, creating paths such as
   `2026-12-12 — 12 December 2026/Documents/`. The sortable ISO prefix
@@ -113,10 +113,11 @@ extensions = [".cr2", ".nef", ".arw", ".dng"]
 priority = 20  # higher than the built-in 'images' rule
 
 [[rule]]
-name = "papers"
-destination = "Papers"
-extensions = [".pdf"]
-priority = 15
+name = "my-project-documents"
+destination = "Documents/Projects/My Project"
+name_regexes = ["(?i)my[ _.-]+project"]
+extensions = [".pdf", ".docx", ".xlsx"]
+priority = 70
 ```
 
 See [docs/docs/tooling/configuration.md](docs/docs/tooling/configuration.md) for the full schema,

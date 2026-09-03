@@ -54,7 +54,7 @@ priority = 30
 
 ## How matching works
 
-A rule matches a file when **any** of its matchers hit:
+A rule matches a file according to these matcher groups:
 
 - `always_matches = true` short-circuits to true.
 - `extensions` lists file extensions; the file's extension (case-insensitive) must be in the list.
@@ -138,26 +138,36 @@ Unknown templates are kept as literal text (`{unknown}`) so the user can see wha
 
 ## Built-in defaults
 
-The shipped rule set covers the common Downloads use case:
+The shipped rule set favors meaningful, nested destinations. Recognizable
+topics beat document types; document types beat the review queue:
 
 | Rule | Destination | Priority | Matchers |
 |---|---|---|---|
+| `arangodb-documents` | `{date}/Documents/Projects/ArangoDB` | 65 | ArangoDB name regex AND document extensions |
+| `arangodb-application-files` | `{date}/Applications/ArangoDB` | 65 | ArangoDB name regex AND application/config extensions |
+| `agentic-coding-materials` | `{date}/Documents/Education/Agentic Coding Platforms` | 60 | agentic/coding-platform name regex AND document extensions |
+| `resumes` | `{date}/Documents/Career/Resumes` | 70 | resume/CV name regex AND document extensions |
+| `coursework` | `{date}/Documents/Education/Coursework` | 55 | assignment/homework/course name regex AND document extensions |
+| `research-documents` | `{date}/Documents/Research` | 52 | research/paper/thesis name regex AND document extensions |
+| `reports-and-summaries` | `{date}/Documents/Reports and Summaries` | 50 | report/summary/minutes name regex AND document extensions |
 | `vacation-photos` | `{date}/Photos/Trips/Vacation` | 50 | vacation/trip/holiday regex AND jpg/png/heic/mov/mp4 |
 | `tax-documents` | `{date}/Documents/Finance/Tax` | 45 | tax/1099/w-2 regex |
 | `invoices` | `{date}/Documents/Finance/Invoices` | 40 | invoice/receipt/bill regex |
 | `screenshots` | `{date}/Images/Screenshots` | 30 | screenshot/capture regex |
 | `raw-photos` | `{date}/Photos/RAW` | 25 | `.cr2 .cr3 .nef .arw .dng .orf .rw2 .raw` |
-| `application-bundles` | `{date}/Applications/{topic}` | 20 | shared application-name prefix + app extensions |
+| document-type rules | `{date}/Documents/<specific type>` | 12–14 | spreadsheet, presentation, book, note, or editable-document extensions |
+| language rules | `{date}/Code/<language family>` | 12 | language-specific source extensions |
+| `developer-configuration` | `{date}/Developer Files/Configuration` | 11 | config/data extensions |
 | `music` | `{date}/Music` | 10 | audio extensions |
 | `videos` | `{date}/Videos` | 10 | video extensions |
-| `archives` | `{date}/Archives` | 10 | archive extensions |
-| `documents` | `{date}/Documents` | 10 | document extensions |
-| `applications` | `{date}/Applications` | 10 | application extensions |
-| `code` | `{date}/Code` | 10 | code extensions |
+| `archives` | `{date}/Archives/Compressed Files` | 10 | archive extensions |
+| `documents-needing-review` | `{date}/Needs Review/Documents` | 10 | otherwise-unrecognized PDFs |
+| `applications` | `{date}/Applications/Installers` | 10 | application extensions |
 | `images` | `{date}/Images` | 5 | common image extensions |
-| `other` | `{date}/Misc` | 0 | catch-all (`name_patterns = ["*"]`) |
+| `other` | `{date}/Needs Review/{ext}` | 0 | catch-all (`name_patterns = ["*"]`) |
 
 The exact list lives in `src/tidyra/resources/default_rules.toml` and is shipped with every install.
+This default taxonomy is recorded in [ADR-0015](../adrs/0015-meaningful-default-destinations.md).
 
 ## Override a built-in rule
 
@@ -207,24 +217,26 @@ Only files that contain `receipt` in the name AND have one of those
 extensions land here. The `{date}` template automatically creates a new
 `12 December 2026`-style folder for each last-updated date.
 
-## Catch-all
+## Review queue
 
 The `other` rule uses `priority = 0` and `name_patterns = ["*"]`, so it
-catches anything no other rule picked. If you'd rather skip unmatched
-files entirely, override `other` to point at a no-op destination:
+catches anything no other rule picked and routes it to
+`Needs Review/{ext}`. This is deliberate: a filename such as `SA-006.pdf`
+does not contain enough information for deterministic rules to invent a
+meaningful topic. If you'd rather skip these files entirely, remove the
+`other` rule from a complete custom rule set. To use one flat review folder,
+override it:
 
 ```toml
 [[rule]]
 name = "other"
-destination = "_REVIEW_ME"
+destination = "Needs Review"
 priority = 0
 name_patterns = ["*"]
 ```
 
-Or replace it with a placeholder and clean up manually later — files
-that match no rule are flagged `UNMATCHED` in the preview and not
-moved. Use this when you'd rather make decisions manually than have
-Tidyra route unknown files to `Misc/`.
+Without a catch-all, files that match no rule are flagged `UNMATCHED` in
+the preview and are not moved.
 
 ## What happens with no config file
 

@@ -20,6 +20,7 @@ Every decision that shapes the codebase — layer boundaries, dependency choices
 | [0012](0012-regex-topic-routing-and-sortable-dates.md) | Regex topic routing and sortable dates | Accepted | 2026-09-03 |
 | [0013](0013-date-folder-modified-times.md) | Date-folder modified times | Accepted | 2026-09-03 |
 | [0014](0014-named-topic-captures.md) | Named topic captures | Accepted | 2026-09-03 |
+| [0015](0015-meaningful-default-destinations.md) | Meaningful default destinations | Accepted | 2026-09-03 |
 
 ## Format
 

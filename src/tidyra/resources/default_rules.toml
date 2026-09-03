@@ -27,8 +27,8 @@
 # tie is skipped as a conflict.
 #
 # The catch-all is the rule with `priority = 0` and `name_patterns = ["*"]`.
-# Files that match no rule appear in the preview as `unmatched` and are
-# not moved — see the configuration docs for the schema.
+# It sends unknown files to an explicit review queue rather than pretending
+# that a generic "Misc" folder is a useful classification.
 
 # ----- Trips: high-priority vacation photos beat the generic photo rule -----
 
@@ -39,18 +39,64 @@ name_regexes = ["(vacation|trip|holiday)"]
 extensions = [".jpg", ".jpeg", ".png", ".heic", ".mov", ".mp4"]
 priority = 50
 
+# ----- Recognizable document topics beat broad document types -----
+
+[[rule]]
+name = "arangodb-documents"
+destination = "{date}/Documents/Projects/ArangoDB"
+name_regexes = ["(?<![A-Za-z0-9])arango(?:[ _.-]*db)?(?![A-Za-z0-9])"]
+extensions = [".pdf", ".doc", ".docx", ".txt", ".md", ".rtf", ".csv", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp"]
+priority = 65
+
+[[rule]]
+name = "agentic-coding-materials"
+destination = "{date}/Documents/Education/Agentic Coding Platforms"
+name_regexes = ["agentic[ _.-]+(?:ai|coding)", "coding[ _.-]+platforms?"]
+extensions = [".pdf", ".doc", ".docx", ".txt", ".md", ".rtf", ".ppt", ".pptx", ".odt", ".odp"]
+priority = 60
+
+[[rule]]
+name = "resumes"
+destination = "{date}/Documents/Career/Resumes"
+name_regexes = ["(?<![A-Za-z0-9])(?:resume|curriculum[ _.-]+vitae|cv)(?![A-Za-z0-9])"]
+extensions = [".pdf", ".doc", ".docx", ".odt", ".rtf"]
+priority = 70
+
+[[rule]]
+name = "coursework"
+destination = "{date}/Documents/Education/Coursework"
+name_regexes = ["(?<![A-Za-z0-9])(?:assignment|homework|coursework|syllabus|lecture|course[ _.-]+website)(?![A-Za-z0-9])"]
+extensions = [".pdf", ".doc", ".docx", ".txt", ".md", ".rtf", ".csv", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp"]
+priority = 55
+
+[[rule]]
+name = "research-documents"
+destination = "{date}/Documents/Research"
+name_regexes = ["(?<![A-Za-z0-9])(?:research|paper|thesis|dissertation|journal|proceedings?|preprint)(?![A-Za-z0-9])"]
+extensions = [".pdf", ".doc", ".docx", ".txt", ".md", ".rtf", ".csv", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp"]
+priority = 52
+
+[[rule]]
+name = "reports-and-summaries"
+destination = "{date}/Documents/Reports and Summaries"
+name_regexes = ["(?<![A-Za-z0-9])(?:report|summary|minutes)(?![A-Za-z0-9])"]
+extensions = [".pdf", ".doc", ".docx", ".txt", ".md", ".rtf", ".csv", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp"]
+priority = 50
+
 # ----- Specific document-class heuristics -----
 
 [[rule]]
 name = "tax-documents"
 destination = "{date}/Documents/Finance/Tax"
 name_regexes = ["\\b(tax|1099|w-?2)\\b"]
+extensions = [".pdf", ".doc", ".docx", ".csv", ".xls", ".xlsx", ".png", ".jpg", ".jpeg"]
 priority = 45
 
 [[rule]]
 name = "invoices"
 destination = "{date}/Documents/Finance/Invoices"
 name_regexes = ["\\b(invoice|receipt|bill)\\b"]
+extensions = [".pdf", ".doc", ".docx", ".csv", ".xls", ".xlsx", ".png", ".jpg", ".jpeg"]
 priority = 40
 
 # ----- Screenshots: detected by name on any platform -----
@@ -69,16 +115,16 @@ destination = "{date}/Photos/RAW"
 extensions = [".cr2", ".cr3", ".nef", ".arw", ".dng", ".orf", ".rw2", ".raw"]
 priority = 25
 
-# ----- Generic media categories -----
-
-# ----- Application bundles: shared name prefix becomes the topic folder. -----
+# ----- Known application files -----
 
 [[rule]]
-name = "application-bundles"
-destination = "{date}/Applications/{topic}"
-topic_regex = "^(?P<topic>[A-Za-z][A-Za-z0-9]*)(?:[-_. ]|$)"
-extensions = [".exe", ".msi", ".dll", ".sys", ".pdb", ".bin", ".dat", ".conf", ".ini"]
-priority = 20
+name = "arangodb-application-files"
+destination = "{date}/Applications/ArangoDB"
+name_regexes = ["(?<![A-Za-z0-9])arango(?:[ _.-]*db)?(?![A-Za-z0-9])"]
+extensions = [".exe", ".msi", ".dll", ".sys", ".pdb", ".bin", ".dat", ".conf", ".ini", ".json"]
+priority = 65
+
+# ----- Generic media categories -----
 
 [[rule]]
 name = "music"
@@ -94,34 +140,105 @@ priority = 10
 
 [[rule]]
 name = "archives"
-destination = "{date}/Archives"
+destination = "{date}/Archives/Compressed Files"
 extensions = [".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar", ".tgz"]
 priority = 10
 
 [[rule]]
-name = "documents"
-destination = "{date}/Documents"
-extensions = [".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".odt", ".md", ".rtf", ".csv", ".epub"]
+name = "spreadsheets"
+destination = "{date}/Documents/Data and Spreadsheets"
+extensions = [".csv", ".xls", ".xlsx", ".ods"]
+priority = 14
+
+[[rule]]
+name = "presentations"
+destination = "{date}/Documents/Presentations"
+extensions = [".ppt", ".pptx", ".odp"]
+priority = 14
+
+[[rule]]
+name = "books"
+destination = "{date}/Documents/Books"
+extensions = [".epub", ".mobi", ".azw", ".azw3"]
+priority = 14
+
+[[rule]]
+name = "notes"
+destination = "{date}/Documents/Notes"
+extensions = [".txt", ".md"]
+priority = 12
+
+[[rule]]
+name = "editable-documents"
+destination = "{date}/Documents/Editable Documents"
+extensions = [".doc", ".docx", ".odt", ".rtf"]
+priority = 12
+
+[[rule]]
+name = "documents-needing-review"
+destination = "{date}/Needs Review/Documents"
+extensions = [".pdf"]
 priority = 10
 
 [[rule]]
 name = "applications"
-destination = "{date}/Applications"
+destination = "{date}/Applications/Installers"
 extensions = [".exe", ".msi", ".dmg", ".pkg", ".deb", ".rpm", ".apk", ".appimage"]
 priority = 10
 
 [[rule]]
-name = "code"
-destination = "{date}/Code"
-extensions = [
-  ".py", ".js", ".ts", ".tsx", ".jsx",
-  ".go", ".rs", ".java", ".kt", ".swift",
-  ".c", ".cpp", ".h", ".hpp", ".cs",
-  ".rb", ".php", ".sh", ".ps1",
-  ".html", ".css", ".scss",
-  ".sql", ".yaml", ".yml", ".json", ".toml", ".xml",
-]
-priority = 10
+name = "python-code"
+destination = "{date}/Code/Python"
+extensions = [".py", ".pyi", ".pyw"]
+priority = 12
+
+[[rule]]
+name = "javascript-typescript-code"
+destination = "{date}/Code/JavaScript and TypeScript"
+extensions = [".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"]
+priority = 12
+
+[[rule]]
+name = "web-code"
+destination = "{date}/Code/Web"
+extensions = [".html", ".htm", ".css", ".scss", ".sass", ".less"]
+priority = 12
+
+[[rule]]
+name = "database-code"
+destination = "{date}/Code/Database"
+extensions = [".sql"]
+priority = 12
+
+[[rule]]
+name = "shell-code"
+destination = "{date}/Code/Shell and PowerShell"
+extensions = [".sh", ".bash", ".zsh", ".fish", ".ps1", ".psm1", ".bat", ".cmd"]
+priority = 12
+
+[[rule]]
+name = "jvm-code"
+destination = "{date}/Code/Java and Kotlin"
+extensions = [".java", ".kt", ".kts", ".scala"]
+priority = 12
+
+[[rule]]
+name = "systems-code"
+destination = "{date}/Code/Systems Languages"
+extensions = [".c", ".cc", ".cpp", ".h", ".hpp", ".go", ".rs", ".swift"]
+priority = 12
+
+[[rule]]
+name = "other-code"
+destination = "{date}/Code/Other Languages"
+extensions = [".cs", ".fs", ".fsx", ".rb", ".php", ".lua", ".r"]
+priority = 12
+
+[[rule]]
+name = "developer-configuration"
+destination = "{date}/Developer Files/Configuration"
+extensions = [".yaml", ".yml", ".json", ".toml", ".xml", ".conf", ".ini"]
+priority = 11
 
 # ----- Images share one topic folder, regardless of their format. -----
 
@@ -131,13 +248,14 @@ destination = "{date}/Images"
 extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".heic"]
 priority = 5
 
-# ----- Catch-all: every other file → Misc. Priority 0 is the lowest
+# ----- Catch-all: every other file → Needs Review/<extension>.
+#       Priority 0 is the lowest
 #       so anything more specific overrides it. `name_patterns = ["*"]`
 #       matches every filename (equivalent to the legacy
 #       `always_matches = true`). -----
 
 [[rule]]
 name = "other"
-destination = "{date}/Misc"
+destination = "{date}/Needs Review/{ext}"
 name_patterns = ["*"]
 priority = 0

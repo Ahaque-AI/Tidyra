@@ -82,13 +82,73 @@ entries = [
         is_symlink=False,
         is_directory=False,
     ),
-    # Unknown extension → catch-all Misc
+    # Unknown extension → explicit review queue
     FileEntry(
         path=root / "mystery.xyz",
         name="mystery.xyz",
         extension=".xyz",
         size=10,
         mtime=time.mktime((2024, 1, 1, 0, 0, 0, 0, 0, 0)),
+        is_symlink=False,
+        is_directory=False,
+    ),
+    # Known project document → named project, not generic Documents
+    FileEntry(
+        path=root / "ArangoDB architecture.pdf",
+        name="ArangoDB architecture.pdf",
+        extension=".pdf",
+        size=23456,
+        mtime=time.mktime((2024, 5, 9, 0, 0, 0, 0, 0, 0)),
+        is_symlink=False,
+        is_directory=False,
+    ),
+    # Code → useful language folder, not generic Code
+    FileEntry(
+        path=root / "organize.py",
+        name="organize.py",
+        extension=".py",
+        size=1234,
+        mtime=time.mktime((2024, 5, 10, 0, 0, 0, 0, 0, 0)),
+        is_symlink=False,
+        is_directory=False,
+    ),
+    # Recognizable coursework → education topic
+    FileEntry(
+        path=root / "Sajil_Agentic_Coding_Platforms_Assignment.pdf",
+        name="Sajil_Agentic_Coding_Platforms_Assignment.pdf",
+        extension=".pdf",
+        size=34567,
+        mtime=time.mktime((2024, 5, 11, 0, 0, 0, 0, 0, 0)),
+        is_symlink=False,
+        is_directory=False,
+    ),
+    # Opaque document name → review, because no honest topic can be inferred
+    FileEntry(
+        path=root / "SA-006.pdf",
+        name="SA-006.pdf",
+        extension=".pdf",
+        size=45678,
+        mtime=time.mktime((2024, 5, 12, 0, 0, 0, 0, 0, 0)),
+        is_symlink=False,
+        is_directory=False,
+    ),
+    # Course summary → coursework beats the lower-priority summary rule
+    FileEntry(
+        path=root / "Course website_summary.txt",
+        name="Course website_summary.txt",
+        extension=".txt",
+        size=5678,
+        mtime=time.mktime((2024, 5, 13, 0, 0, 0, 0, 0, 0)),
+        is_symlink=False,
+        is_directory=False,
+    ),
+    # Resume → career folder
+    FileEntry(
+        path=root / "Abdul Haque Agentic AI Engineer Resume.pdf",
+        name="Abdul Haque Agentic AI Engineer Resume.pdf",
+        extension=".pdf",
+        size=67890,
+        mtime=time.mktime((2024, 5, 14, 0, 0, 0, 0, 0, 0)),
         is_symlink=False,
         is_directory=False,
     ),
@@ -111,7 +171,13 @@ expected = {
     "tax-return-2024.pdf": "2024-04-10 — 10 April 2024/Documents/Finance/Tax",
     "IMG_20240315_143022.jpg": "2024-03-15 — 15 March 2024/Images",
     "song.mp3": "2023-12-01 — 1 December 2023/Music",
-    "mystery.xyz": "2024-01-01 — 1 January 2024/Misc",
+    "mystery.xyz": "2024-01-01 — 1 January 2024/Needs Review/xyz",
+    "ArangoDB architecture.pdf": "2024-05-09 — 9 May 2024/Documents/Projects/ArangoDB",
+    "organize.py": "2024-05-10 — 10 May 2024/Code/Python",
+    "Sajil_Agentic_Coding_Platforms_Assignment.pdf": "2024-05-11 — 11 May 2024/Documents/Education/Agentic Coding Platforms",
+    "SA-006.pdf": "2024-05-12 — 12 May 2024/Needs Review/Documents",
+    "Course website_summary.txt": "2024-05-13 — 13 May 2024/Documents/Education/Coursework",
+    "Abdul Haque Agentic AI Engineer Resume.pdf": "2024-05-14 — 14 May 2024/Documents/Career/Resumes",
 }
 
 print("\nExpectation check:")

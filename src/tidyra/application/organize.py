@@ -36,10 +36,13 @@ class OrganizeExecutor:
         ).info("execute: starting plan")
 
         failures: list[tuple[FileOperation, Exception]] = []
+        # Refresh no-op date folders too, but do not timestamp a folder for a
+        # move that later fails. Moving files and removing empty directories
+        # can both touch parent directory mtimes, so apply these updates last.
         date_folder_times: dict[Path, float] = {}
         for op in plan.operations:
             if (
-                op.skip_reason in {None, SkipReason.NO_OP}
+                op.skip_reason == SkipReason.NO_OP
                 and op.date_folder is not None
                 and op.source_mtime is not None
             ):
@@ -57,18 +60,15 @@ class OrganizeExecutor:
             try:
                 self._fs.create_directory(op.destination.parent)
                 self._fs.move(op.source, op.destination)
+                if op.date_folder is not None and op.source_mtime is not None:
+                    prior = date_folder_times.get(op.date_folder)
+                    date_folder_times[op.date_folder] = (
+                        op.source_mtime if prior is None else max(prior, op.source_mtime)
+                    )
                 log.info("moved")
             except Exception as exc:
                 log.bind(error_type=type(exc).__name__).exception("move failed")
                 failures.append((op, exc))
-
-        for path, timestamp in date_folder_times.items():
-            try:
-                self._fs.set_modified_time(path, timestamp)
-            except Exception as exc:
-                logger.bind(
-                    path=str(path), error_type=type(exc).__name__, component="executor"
-                ).exception("set date folder modified time failed")
 
         removed_directories: list[Path] = []
         directory_removal_failures: list[tuple[Path, Exception]] = []
@@ -81,6 +81,18 @@ class OrganizeExecutor:
                     path=str(removal.path), error_type=type(exc).__name__, component="executor"
                 ).exception("empty directory removal failed")
                 directory_removal_failures.append((removal.path, exc))
+
+        for path, timestamp in date_folder_times.items():
+            try:
+                refreshed = self._fs.set_modified_time(path, timestamp)
+                if not refreshed:
+                    logger.bind(path=str(path), component="executor").warning(
+                        "set date folder modified time skipped"
+                    )
+            except Exception as exc:
+                logger.bind(
+                    path=str(path), error_type=type(exc).__name__, component="executor"
+                ).exception("set date folder modified time failed")
 
         logger.bind(
             root=str(plan.root),
