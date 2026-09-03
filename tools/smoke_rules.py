@@ -6,6 +6,7 @@ the strategy, the destination-rendering, and the plan validator.
 
 from __future__ import annotations
 
+import tempfile
 import time
 from pathlib import Path
 
@@ -29,7 +30,7 @@ for r in rules:
 
 
 # 2) Build a synthetic root and verify each interesting case
-root = Path("C:/Users/Abdul/synthetic-tidyra-root")
+root = Path(tempfile.mkdtemp(prefix="tidyra-smoke-"))
 entries = [
     # Vacation photo by name → high-priority rule beats generic photo
     FileEntry(
