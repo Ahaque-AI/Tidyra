@@ -9,19 +9,20 @@
 #   [[rule]]
 #   name           — stable identifier (overrides by name)
 #   destination    — folder relative to the scan root; supports
-#                    templates `{year}`, `{month}`, `{ext}`, `{stem}`
+#                    templates `{date}`, `{year}`, `{month}`, `{ext}`, `{stem}`
 #                    expanded from each file's mtime/name.
 #   extensions     — optional list of file extensions this rule matches
 #                    (e.g. `[".jpg", ".png"]`). Case-insensitive.
 #   name_patterns  — optional list of glob patterns the file name must
 #                    match. Case-insensitive. Use `["*"]` for a catch-all.
+#   name_regexes   — optional list of case-insensitive regular expressions
+#                    matched against the file name.
 #   priority       — higher wins; ties produce RULE_CONFLICT.
 #
-# Matching order for one file (highest priority first, declared order as a
-# tiebreaker):
-#   1. `always_matches == true` rules (legacy form — prefer patterns = ["*"])
-#   2. rules whose `extensions` contain the file's extension
-#   3. rules whose `name_patterns` glob-match the file's name
+# Matching is deterministic: glob patterns and regular expressions are
+# alternative name matchers; if extensions and a name matcher are present,
+# both must match. The highest-priority matching rule wins; a same-priority
+# tie is skipped as a conflict.
 #
 # The catch-all is the rule with `priority = 0` and `name_patterns = ["*"]`.
 # Files that match no rule appear in the preview as `unmatched` and are
@@ -31,8 +32,8 @@
 
 [[rule]]
 name = "vacation-photos"
-destination = "Photos/Trips/Vacation"
-name_patterns = ["*vacation*", "*trip*", "*holiday*"]
+destination = "{date}/Photos/Trips/Vacation"
+name_regexes = ["\\b(vacation|trip|holiday)\\b"]
 extensions = [".jpg", ".jpeg", ".png", ".heic", ".mov", ".mp4"]
 priority = 50
 
@@ -40,29 +41,29 @@ priority = 50
 
 [[rule]]
 name = "tax-documents"
-destination = "Documents/Finance/Tax/{year}"
-name_patterns = ["*tax*", "*1099*", "*w-2*", "*w2*"]
+destination = "{date}/Documents/Finance/Tax"
+name_regexes = ["\\b(tax|1099|w-?2)\\b"]
 priority = 45
 
 [[rule]]
 name = "invoices"
-destination = "Documents/Finance/Invoices"
-name_patterns = ["*invoice*", "*receipt*", "*bill*"]
+destination = "{date}/Documents/Finance/Invoices"
+name_regexes = ["\\b(invoice|receipt|bill)\\b"]
 priority = 40
 
 # ----- Screenshots: detected by name on any platform -----
 
 [[rule]]
 name = "screenshots"
-destination = "Screenshots"
-name_patterns = ["Screenshot*", "Screen Shot*", "Capture*", "Snip*"]
+destination = "{date}/Images/Screenshots"
+name_regexes = ["^(screenshot|screen shot|capture|snip)"]
 priority = 30
 
 # ----- RAW photos win over generic photo bucketing -----
 
 [[rule]]
 name = "raw-photos"
-destination = "Photos/RAW"
+destination = "{date}/Photos/RAW"
 extensions = [".cr2", ".cr3", ".nef", ".arw", ".dng", ".orf", ".rw2", ".raw"]
 priority = 25
 
@@ -70,37 +71,37 @@ priority = 25
 
 [[rule]]
 name = "music"
-destination = "Music"
+destination = "{date}/Music"
 extensions = [".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a", ".opus", ".wma", ".aiff"]
 priority = 10
 
 [[rule]]
 name = "videos"
-destination = "Videos"
+destination = "{date}/Videos"
 extensions = [".mp4", ".mkv", ".mov", ".avi", ".webm", ".wmv", ".flv", ".m4v"]
 priority = 10
 
 [[rule]]
 name = "archives"
-destination = "Archives"
+destination = "{date}/Archives"
 extensions = [".zip", ".tar", ".gz", ".bz2", ".xz", ".7z", ".rar", ".tgz"]
 priority = 10
 
 [[rule]]
 name = "documents"
-destination = "Documents"
+destination = "{date}/Documents"
 extensions = [".pdf", ".docx", ".txt", ".xlsx", ".pptx", ".odt", ".md", ".rtf", ".csv", ".epub"]
 priority = 10
 
 [[rule]]
 name = "applications"
-destination = "Applications"
+destination = "{date}/Applications"
 extensions = [".exe", ".msi", ".dmg", ".pkg", ".deb", ".rpm", ".apk", ".appimage"]
 priority = 10
 
 [[rule]]
 name = "code"
-destination = "Code"
+destination = "{date}/Code"
 extensions = [
   ".py", ".js", ".ts", ".tsx", ".jsx",
   ".go", ".rs", ".java", ".kt", ".swift",
@@ -111,13 +112,11 @@ extensions = [
 ]
 priority = 10
 
-# ----- Photos by year (mtime proxy). Falls below RAW and vacations
-#       but above the flat "Photos" bucket, so non-RAW images land in
-#       year-organized folders while high-priority rules override. -----
+# ----- Images share one topic folder, regardless of their format. -----
 
 [[rule]]
-name = "photos-by-year"
-destination = "Photos/{year}"
+name = "images"
+destination = "{date}/Images"
 extensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".heic"]
 priority = 5
 
@@ -128,6 +127,6 @@ priority = 5
 
 [[rule]]
 name = "other"
-destination = "Misc"
+destination = "{date}/Misc"
 name_patterns = ["*"]
 priority = 0

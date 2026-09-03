@@ -12,9 +12,9 @@ The preview UI and the executor both consume the **same** `OrganizationPlan`. Th
 
 `FileEntry.is_symlink` is metadata, not a hint. `LocalFileSystem.scan` records the flag and `PlanValidator` rejects the operation with `SkipReason.SYMLINK`. Do not "support symlink following" — the protection is deliberate. If a user really wants to move a symlink, they can replace it with the target first.
 
-## 4. Never delete
+## 4. Remove only explicitly selected empty directories
 
-`move` is the only filesystem operation the executor ever calls. There is no `.unlink`, no `shutil.rmtree`, no "delete empty dirs after move" helper. Files that need to go away are the user's responsibility outside Tidyra.
+Tidyra never deletes files and never recursively deletes a directory. Empty-directory removal is available only when the user selects it before scanning; the preview lists every directory that will be checked and the final action names the removal. `LocalFileSystem.remove_empty_directory()` rejects symlinks and Windows junctions, then uses non-recursive `Path.rmdir()` as the final atomic emptiness check. A directory that contains anything at removal time remains untouched. See [ADR-0011](../../adrs/0011-explicit-empty-directory-cleanup.md).
 
 ## 5. No destructive remote action without confirmation
 

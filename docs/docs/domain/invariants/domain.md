@@ -46,7 +46,7 @@ A strategy is a pure function. Same inputs → same plan. No randomness, no wall
 - If a rule has only one, that single condition decides.
 - If a rule has neither, it never matches.
 
-This is the "name AND format together" semantic the user asked for. Templates in `destination` (`{year}`, `{month}`, `{ext}`, `{stem}`) are pure transformations of `FileEntry` fields — never of file contents. The substitution helper is `domain.rules.render_destination`. `{year}` and `{month}` come from `entry.mtime` (POSIX float); we never read EXIF or other metadata.
+`name_regexes` are case-insensitive regular expressions and are an alternative to glob `name_patterns`; either may be combined with `extensions` for an explicit intersection. Templates in `destination` (`{date}`, `{year}`, `{month}`, `{ext}`, `{stem}`) are pure transformations of `FileEntry` fields — never of file contents. The substitution helper is `domain.rules.render_destination`. Date templates come from `entry.mtime` (POSIX float): `{date}` is `2026-12-12 — 12 December 2026`, `{year}` is `2026`, and `{month}` is `12`; we never read EXIF, download history, or other metadata. See [ADR-0012](../../adrs/0012-regex-topic-routing-and-sortable-dates.md).
 
 ## 5. `PlanValidator` is the only safety gate
 

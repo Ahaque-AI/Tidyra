@@ -46,6 +46,7 @@ priority = 30
 | `destination` | yes | string | Directory relative to the scan root. Created if missing. Supports templates (see below). |
 | `extensions` | no | list of strings | File extensions to match (with leading dot, lowercase). |
 | `name_patterns` | no | list of strings | Glob patterns the file name must match (case-insensitive). E.g. `["Screenshot*", "*vacation*"]`. |
+| `name_regexes` | no | list of strings | Case-insensitive regular expressions matched against the file name. E.g. `["\\b(invoice|receipt)\\b"]`. |
 | `patterns` | no | list of strings | Legacy alias for `name_patterns`. New configs should use `name_patterns`. |
 | `priority` | no | integer | Higher wins. Default `0`. Built-ins use `10`; catch-all `0`. |
 | `always_matches` | no | boolean | Legacy. Equivalent to `name_patterns = ["*"]`. Kept so v0.1.0 configs still parse. Prefer `name_patterns` for new rules. |
@@ -57,14 +58,15 @@ A rule matches a file when **any** of its matchers hit:
 - `always_matches = true` short-circuits to true.
 - `extensions` lists file extensions; the file's extension (case-insensitive) must be in the list.
 - `name_patterns` lists glob patterns; the file's name is matched against each pattern with `fnmatch` (case-insensitive).
+- `name_regexes` lists regular expressions; the file's name is searched case-insensitively. Regexes and glob patterns are alternative name matchers.
 
-When a rule sets **both** `extensions` and `name_patterns`, the file must satisfy **both** (intersection). This is the "name AND format together" semantic — a rule like
+When a rule sets **both** `extensions` and a name matcher, the file must satisfy **both** (intersection). This is the deterministic topic-and-format semantic — a rule like
 
 ```toml
 [[rule]]
 name = "vacation-photos"
-destination = "Photos/Trips/Vacation"
-name_patterns = ["*vacation*", "*trip*", "*holiday*"]
+destination = "{date}/Photos/Trips/Vacation"
+name_regexes = ["\\b(vacation|trip|holiday)\\b"]
 extensions = [".jpg", ".jpeg", ".png", ".heic", ".mov", ".mp4"]
 priority = 50
 ```
@@ -78,7 +80,6 @@ When a rule sets only one of the two, that single condition decides. (The legacy
 When more than one rule matches the same file:
 
 - The rule with the highest `priority` wins. Tied rules produce `RULE_CONFLICT` and the file is skipped (the preview surfaces this).
-- Within a priority tier, declared order in the TOML file is the tiebreaker.
 
 ## Destination templates
 
@@ -86,12 +87,29 @@ When more than one rule matches the same file:
 
 | Template | Source | Example (for a `tax-return.pdf` modified `2024-04-10`) |
 |---|---|---|
+| `{date}` | `mtime` as sortable ISO date + readable date | `2024-04-10 — 10 April 2024` |
 | `{year}` | `mtime` as `%Y` | `2024` |
 | `{month}` | `mtime` as `%m` (zero-padded) | `04` |
 | `{stem}` | File name without its final extension | `tax-return` |
 | `{ext}` | File extension without the leading dot (lowercase) | `pdf` |
 
-Example: `Documents/Finance/Tax/{year}` resolves to `Documents/Finance/Tax/2024` for a 2024 file. **Note:** `{year}` and `{month}` use the file's `mtime` (last modified), not its true creation date. They are a useful proxy for organising photos and downloads, not a substitute for reading EXIF metadata.
+Date is the first destination segment. For example, `{date}/Documents/Finance/Tax` resolves to `2024-04-10 — 10 April 2024/Documents/Finance/Tax` for a file last updated on 10 April 2024. The `YYYY-MM-DD` prefix makes alphabetical folder viewers sort dates chronologically. **Note:** every date template uses the file's `mtime` (last modified), not its download or true creation date. Download dates are not consistently available across filesystems, so Tidyra does not guess or inspect file contents.
+
+## Deterministic routing recipe
+
+Use the folder path to describe the outcome and a regular expression when you mean a specific topic. There is no hidden relevance score or LLM: the same file and rules always produce the same destination. Built-in destinations do not create format folders.
+
+```toml
+# Regular expression topic matching stays deterministic.
+[[rule]]
+name = "project-reports"
+destination = "{date}/Documents/Projects/Reports"
+name_regexes = ["\\b(tidyra|project[ _-]?report)\\b"]
+extensions = [".pdf", ".docx", ".xlsx"]
+priority = 40
+```
+
+This rule does not route every PDF: it routes only a PDF, DOCX, or XLSX whose filename matches the explicit topic regex. Give topic rules a higher priority than generic category rules. A same-priority tie is intentionally skipped as `RULE_CONFLICT`; changing the TOML order never silently chooses a file's destination.
 
 Unknown templates are kept as literal text (`{unknown}`) so the user can see what they got wrong instead of a silent substitution. Folders that don't yet exist are created on demand by the executor.
 
@@ -101,19 +119,19 @@ The shipped rule set covers the common Downloads use case:
 
 | Rule | Destination | Priority | Matchers |
 |---|---|---|---|
-| `vacation-photos` | `Photos/Trips/Vacation` | 50 | `*vacation* \| *trip* \| *holiday*` (names) AND jpg/png/heic/mov/mp4 |
-| `tax-documents` | `Documents/Finance/Tax/{year}` | 45 | `*tax* \| *1099* \| *w-2* \| *w2*` (names) |
-| `invoices` | `Documents/Finance/Invoices` | 40 | `*invoice* \| *receipt* \| *bill*` (names) |
-| `screenshots` | `Screenshots` | 30 | `Screenshot* \| Screen Shot* \| Capture* \| Snip*` (names) |
-| `raw-photos` | `Photos/RAW` | 25 | `.cr2 .cr3 .nef .arw .dng .orf .rw2 .raw` (extensions) |
-| `music` | `Music` | 10 | `.mp3 .wav .flac .aac .ogg .m4a .opus .wma .aiff` |
-| `videos` | `Videos` | 10 | `.mp4 .mkv .mov .avi .webm .wmv .flv .m4v` |
-| `archives` | `Archives` | 10 | `.zip .tar .gz .bz2 .xz .7z .rar .tgz` |
-| `documents` | `Documents` | 10 | `.pdf .docx .txt .xlsx .pptx .odt .md .rtf .csv .epub` |
-| `applications` | `Applications` | 10 | `.exe .msi .dmg .pkg .deb .rpm .apk .appimage` |
-| `code` | `Code` | 10 | `.py .js .ts .go .rs .java ...` |
-| `photos-by-year` | `Photos/{year}` | 5 | `.jpg .jpeg .png .webp .gif .bmp .tiff .heic` |
-| `other` | `Misc` | 0 | catch-all (`name_patterns = ["*"]`) |
+| `vacation-photos` | `{date}/Photos/Trips/Vacation` | 50 | vacation/trip/holiday regex AND jpg/png/heic/mov/mp4 |
+| `tax-documents` | `{date}/Documents/Finance/Tax` | 45 | tax/1099/w-2 regex |
+| `invoices` | `{date}/Documents/Finance/Invoices` | 40 | invoice/receipt/bill regex |
+| `screenshots` | `{date}/Images/Screenshots` | 30 | screenshot/capture regex |
+| `raw-photos` | `{date}/Photos/RAW` | 25 | `.cr2 .cr3 .nef .arw .dng .orf .rw2 .raw` |
+| `music` | `{date}/Music` | 10 | audio extensions |
+| `videos` | `{date}/Videos` | 10 | video extensions |
+| `archives` | `{date}/Archives` | 10 | archive extensions |
+| `documents` | `{date}/Documents` | 10 | document extensions |
+| `applications` | `{date}/Applications` | 10 | application extensions |
+| `code` | `{date}/Code` | 10 | code extensions |
+| `images` | `{date}/Images` | 5 | common image extensions |
+| `other` | `{date}/Misc` | 0 | catch-all (`name_patterns = ["*"]`) |
 
 The exact list lives in `src/tidyra/resources/default_rules.toml` and is shipped with every install.
 
@@ -155,15 +173,15 @@ A name-and-format example:
 ```toml
 [[rule]]
 name = "receipts-by-year"
-destination = "Documents/Finance/Receipts/{year}"
-name_patterns = ["*receipt*"]
+destination = "{date}/Documents/Finance/Receipts"
+name_regexes = ["\\breceipt\\b"]
 extensions = [".pdf", ".png", ".jpg", ".heic"]
 priority = 35
 ```
 
 Only files that contain `receipt` in the name AND have one of those
-extensions land here. The `{year}` template automatically creates a new
-folder per year as new receipts arrive.
+extensions land here. The `{date}` template automatically creates a new
+`12 December 2026`-style folder for each last-updated date.
 
 ## Catch-all
 
@@ -195,7 +213,7 @@ Bad TOML raises a clear error at startup. Common mistakes:
 
 - `name` or `destination` missing → "rule entry missing string 'name'"
 - `extensions` is not a list → "rule <name> 'extensions' must be a list"
-- `name_patterns` is not a list → "rule <name> 'name_patterns' must be a list"
+- `name_patterns` or `name_regexes` is not a list → "rule <name> '<field>' must be a list"
 - `priority` is not an integer → "rule <name> 'priority' must be an integer"
 
 If you see one of these, fix the file and relaunch.
@@ -218,3 +236,7 @@ Recursion does **not** change safety. `PlanValidator` still rejects
 moves whose destinations are *inside* another move's source path, so a
 recursive scan cannot arrange a folder into a destination we are
 about to move.
+
+## Empty-folder cleanup
+
+Before scanning, you may select **Remove empty folders after organizing**. The preview lists the directories Tidyra will check after its planned moves. The final action says that empty folders will be removed. Tidyra never deletes files, never removes a non-empty directory, and never recursively deletes a directory. It rejects symlinks and Windows junctions; a folder that gains a file before the operation runs is left alone.

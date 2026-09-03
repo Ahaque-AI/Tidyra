@@ -4,18 +4,20 @@ Rules are data, not code. They are loaded from TOML, merged with built-in
 defaults, and consumed by strategies. Strategies must not embed rule logic
 directly.
 
-A rule matches a file when **any** of its matchers hits:
+A rule matches a file when its configured matcher groups hit:
 
 - one of the file's extensions appears in ``extensions``
 - the file's name matches one of the glob ``name_patterns``
   (case-insensitive ``fnmatch``)
+- the file's name matches one of the ``name_regexes``
+  (case-insensitive regular-expression search)
 
 The first rule at the highest ``priority`` wins. Ties at the same priority
 are flagged as ``RULE_CONFLICT`` and skipped.
 
 ``destination`` may contain template variables that resolve from the file
-itself (``{year}``, ``{month}``, ``{ext}``, ``{stem}``). The substitution
-helper lives in :func:`render_destination`.
+itself (``{date}``, ``{year}``, ``{month}``, ``{ext}``, ``{stem}``). The
+substitution helper lives in :func:`render_destination`.
 
 ``always_matches`` is retained for backward compatibility with v0.1.0
 configs. New rules should prefer ``name_patterns = ['*']``.
@@ -25,6 +27,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import fnmatch
+import re
 from dataclasses import dataclass, field
 
 from tidyra.domain.models import FileEntry
@@ -43,6 +46,8 @@ class OrganizationRule:
         name_patterns: Glob patterns (case-insensitive) the file name must
             match. ``["Screenshot*"]`` matches ``Screenshot 2024-01-01.png``.
             ``["*"]`` is the explicit catch-all.
+        name_regexes: Regular expressions (case-insensitive) searched in the
+            file name. They are an alternative to ``name_patterns``.
         priority: Higher wins. Built-ins default to ``10``; catch-alls to ``0``.
         always_matches: Deprecated. Kept so older configs still parse —
             equivalent to ``name_patterns = ['*']`` for matching purposes.
@@ -52,6 +57,7 @@ class OrganizationRule:
     destination: str
     extensions: frozenset[str] = field(default_factory=frozenset)
     name_patterns: tuple[str, ...] = ()
+    name_regexes: tuple[str, ...] = ()
     priority: int = 0
     always_matches: bool = False
 
@@ -61,11 +67,11 @@ class OrganizationRule:
         Matching policy:
 
         - ``always_matches`` short-circuits to True (legacy form).
-        - If both ``extensions`` and ``name_patterns`` are set, the file must
+        - Glob patterns and regular expressions are alternative name matchers.
+        - If both ``extensions`` and a name matcher are set, the file must
           satisfy **both** — extension is one of the listed extensions AND
-          name matches one of the globs. This is the "name AND format
-          together" semantic the user asked for.
-        - If only one of ``extensions`` or ``name_patterns`` is set, that
+          name matches a glob or regular expression.
+        - If only one matcher kind is set, that
           single condition decides.
         - If neither is set, the rule does not match.
         """
@@ -75,21 +81,17 @@ class OrganizationRule:
         ext = extension.lower()
         ext_match = bool(ext) and ext in self.extensions
 
-        name_match: bool
-        if self.name_patterns:
-            lowered = name.lower()
-            name_match = any(
-                fnmatch.fnmatchcase(lowered, pattern.lower())
-                for pattern in self.name_patterns
-            )
-        else:
-            name_match = False
+        lowered = name.lower()
+        name_match = any(
+            fnmatch.fnmatchcase(lowered, pattern.lower()) for pattern in self.name_patterns
+        ) or any(re.search(pattern, name, flags=re.IGNORECASE) is not None for pattern in self.name_regexes)
+        has_name_matcher = bool(self.name_patterns or self.name_regexes)
 
-        if self.extensions and self.name_patterns:
+        if self.extensions and has_name_matcher:
             return ext_match and name_match
         if self.extensions:
             return ext_match
-        if self.name_patterns:
+        if has_name_matcher:
             return name_match
         return False
 
@@ -100,13 +102,14 @@ class OrganizationRule:
             destination=self.destination,
             extensions=extensions,
             name_patterns=self.name_patterns,
+            name_regexes=self.name_regexes,
             priority=self.priority,
             always_matches=self.always_matches,
         )
 
 
 def render_destination(template: str, entry: FileEntry) -> str:
-    """Expand ``{year}``, ``{month}``, ``{ext}``, ``{stem}`` in a destination.
+    """Expand ``{date}``, ``{year}``, ``{month}``, ``{ext}``, ``{stem}``.
 
     Unknown placeholders are left as literal text so the user sees what
     they got wrong instead of a silent substitution to empty string.
@@ -119,6 +122,7 @@ def render_destination(template: str, entry: FileEntry) -> str:
         return template
     moment = _dt.datetime.fromtimestamp(entry.mtime)
     mapping = {
+        "date": f"{moment.year:04d}-{moment.month:02d}-{moment.day:02d} — {moment.day} {moment.strftime('%B')} {moment.year:04d}",
         "year": f"{moment.year:04d}",
         "month": f"{moment.month:02d}",
         "ext": entry.extension.lstrip(".").lower() or "file",

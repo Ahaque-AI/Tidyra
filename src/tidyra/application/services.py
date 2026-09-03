@@ -15,7 +15,7 @@ from loguru import logger
 from tidyra.application.organize import OrganizeExecutor
 from tidyra.application.scanner import scan_directory
 from tidyra.domain.models import FileEntry
-from tidyra.domain.plans import OrganizationPlan, OrganizationResult, PlanValidator
+from tidyra.domain.plans import DirectoryRemoval, OrganizationPlan, OrganizationResult, PlanValidator
 from tidyra.domain.rules import OrganizationRule
 from tidyra.domain.strategies import RuleBasedStrategy
 from tidyra.infrastructure.configuration import ConfigService, get_config_service
@@ -61,6 +61,7 @@ class OrganizeService:
         root: Path,
         *,
         recurse: bool = True,
+        remove_empty_directories: bool = False,
     ) -> tuple[OrganizationPlan, Sequence[FileEntry]]:
         """Scan ``root`` and produce a validated plan.
 
@@ -77,6 +78,11 @@ class OrganizeService:
         validator = PlanValidator(root=root, destination_exists=self._fs.exists)
         strategy = RuleBasedStrategy(validator=validator)
         plan = strategy.create_plan(root=root, entries=entries, rules=self.rules())
+        if remove_empty_directories:
+            removals = tuple(
+                DirectoryRemoval(path=path) for path in self._fs.directories(root, recurse=recurse)
+            )
+            plan = validator.validate(plan.operations, removals)
         moves = plan.to_execute()
         skips = plan.skipped()
         logger.bind(

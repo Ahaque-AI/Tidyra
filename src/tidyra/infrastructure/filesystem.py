@@ -8,6 +8,7 @@ an in-memory fake without ever touching a developer machine.
 
 from __future__ import annotations
 
+from errno import EEXIST, ENOTEMPTY
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
@@ -59,6 +60,14 @@ class FileSystem(Protocol):
 
     def is_within(self, path: Path, root: Path) -> bool:
         """Return True if ``path`` resolves inside ``root``."""
+        ...
+
+    def directories(self, root: Path, *, recurse: bool = False) -> Sequence[Path]:
+        """Return real directories under ``root``, deepest first."""
+        ...
+
+    def remove_empty_directory(self, path: Path) -> bool:
+        """Remove ``path`` only when it is still an empty, real directory."""
         ...
 
 
@@ -130,6 +139,35 @@ class LocalFileSystem:
             return False
         return True
 
+    def directories(self, root: Path, *, recurse: bool = False) -> Sequence[Path]:
+        if not root.exists() or not root.is_dir():
+            return ()
+        candidates = root.rglob("*") if recurse else root.iterdir()
+        directories: list[Path] = []
+        for candidate in candidates:
+            try:
+                if _is_link_or_junction(candidate) or not candidate.is_dir():
+                    continue
+                directories.append(candidate)
+            except OSError:
+                logger.bind(path=str(candidate), component="filesystem").exception(
+                    "directory scan: failed to inspect entry"
+                )
+        return tuple(sorted(directories, key=lambda path: len(path.parts), reverse=True))
+
+    def remove_empty_directory(self, path: Path) -> bool:
+        """Use the OS's non-recursive removal as the final emptiness check."""
+        if _is_link_or_junction(path):
+            return False
+        try:
+            path.rmdir()
+        except OSError as exc:
+            if exc.errno in {EEXIST, ENOTEMPTY}:
+                return False
+            raise
+        logger.bind(path=str(path), component="filesystem").info("removed empty directory")
+        return True
+
     @staticmethod
     def _build_entry(child: Path) -> FileEntry:
         # Use lstat so we don't follow symlinks — recording them honestly
@@ -144,3 +182,9 @@ class LocalFileSystem:
             is_symlink=child.is_symlink(),
             is_directory=child.is_dir() and not child.is_symlink(),
         )
+
+
+def _is_link_or_junction(path: Path) -> bool:
+    """Reject both symbolic links and Windows directory junctions."""
+    is_junction = getattr(path, "is_junction", None)
+    return path.is_symlink() or (is_junction() if is_junction is not None else False)

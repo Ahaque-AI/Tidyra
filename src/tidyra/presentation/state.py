@@ -43,6 +43,7 @@ class UIState:
     # tree by default — matches the user's expectation that Tidyra
     # organises the whole chosen root, not just its direct children.
     recurse_subfolders: bool = True
+    remove_empty_directories: bool = False
     on_navigate: Callable[[], None] | None = field(default=None, repr=False)
 
     def go(self, screen: Screen) -> None:

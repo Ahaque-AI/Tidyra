@@ -88,6 +88,7 @@ class TidyraApp:
             plan, entries = self.state.service.plan_for(
                 self.state.root,
                 recurse=self.state.recurse_subfolders,
+                remove_empty_directories=self.state.remove_empty_directories,
             )
             self.state.plan = plan
             self.state.entries = entries
@@ -114,6 +115,11 @@ class TidyraApp:
     def toggle_recurse(self) -> None:
         """Flip the recurse-subfolders toggle and re-render."""
         self.state.recurse_subfolders = not self.state.recurse_subfolders
+        self.render()
+
+    def toggle_remove_empty_directories(self) -> None:
+        """Require an explicit opt-in before planning directory cleanup."""
+        self.state.remove_empty_directories = not self.state.remove_empty_directories
         self.render()
 
     def organize(self) -> None:

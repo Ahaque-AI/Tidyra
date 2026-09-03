@@ -17,18 +17,19 @@ nothing is overwritten silently, and the preview is a real
   photos, invoices, tax documents, music, videos, archives, code,
   and a `Misc/` catch-all. Rules can match on extension, file name
   glob, or both. Override or extend via TOML.
-- **Nested destinations with `{year}` / `{month}` templates.**
-  `Documents/Finance/Tax/{year}` creates per-year buckets
-  automatically as new files arrive. `Photos/{year}` organises photos
-  by their mtime year.
+- **Date and format folders with deterministic templates.**
+  `{date}` is always first, creating paths such as
+  `2026-12-12 — 12 December 2026/Documents/`. The sortable ISO prefix
+  keeps folder viewers in chronological order while preserving a readable date.
 - **Three-step workflow.** Pick a folder → preview the plan → confirm
   to organize. Nothing happens until you press the button.
 - **Optional recursive scan.** Walk every file under the chosen root
   and preserve the original folder layout inside each rule's
   destination. Toggle in the home view; default is on.
-- **Safety first.** No deletion, no silent overwrite, no symlink following,
+- **Safety first.** No file deletion, no silent overwrite, no symlink following,
   no moves outside the chosen root, no recursive re-organization in a
-  single run.
+  single run. Optionally remove only folders that are still empty after
+  the visible plan completes.
 - **Strategy abstraction.** The rule-based engine is one
   implementation of an `OrganizationStrategy` Protocol. A future LLM
   strategy can produce the same `OrganizationPlan` without touching the

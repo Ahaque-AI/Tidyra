@@ -7,6 +7,8 @@ both consume the same validated plan.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from loguru import logger
 
 from tidyra.domain.plans import FileOperation, OrganizationPlan, OrganizationResult
@@ -49,10 +51,27 @@ class OrganizeExecutor:
                 log.bind(error_type=type(exc).__name__).exception("move failed")
                 failures.append((op, exc))
 
+        removed_directories: list[Path] = []
+        directory_removal_failures: list[tuple[Path, Exception]] = []
+        for removal in plan.directory_removals:
+            try:
+                if self._fs.remove_empty_directory(removal.path):
+                    removed_directories.append(removal.path)
+            except Exception as exc:
+                logger.bind(
+                    path=str(removal.path), error_type=type(exc).__name__, component="executor"
+                ).exception("empty directory removal failed")
+                directory_removal_failures.append((removal.path, exc))
+
         logger.bind(
             root=str(plan.root),
             moved=len(to_execute) - len(failures),
             failed=len(failures),
             component="executor",
         ).info("execute: complete")
-        return OrganizationResult(plan=plan, failures=tuple(failures))
+        return OrganizationResult(
+            plan=plan,
+            failures=tuple(failures),
+            removed_directories=tuple(removed_directories),
+            directory_removal_failures=tuple(directory_removal_failures),
+        )

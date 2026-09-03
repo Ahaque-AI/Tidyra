@@ -12,6 +12,7 @@ Domain code never sees TOML types — only ``OrganizationRule`` dataclasses.
 from __future__ import annotations
 
 import tomllib
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
@@ -118,6 +119,15 @@ class ConfigService:
         if not isinstance(name_patterns_raw, list):
             raise ValueError(f"rule {name!r} 'name_patterns' must be a list")
         name_patterns = tuple(str(p) for p in name_patterns_raw if isinstance(p, str))
+        name_regexes_raw = entry.get("name_regexes", [])
+        if not isinstance(name_regexes_raw, list):
+            raise ValueError(f"rule {name!r} 'name_regexes' must be a list")
+        name_regexes = tuple(str(pattern) for pattern in name_regexes_raw if isinstance(pattern, str))
+        for pattern in name_regexes:
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise ValueError(f"rule {name!r} has invalid regular expression {pattern!r}") from exc
         priority = entry.get("priority", 0)
         if not isinstance(priority, int):
             raise ValueError(f"rule {name!r} 'priority' must be an integer")
@@ -129,6 +139,7 @@ class ConfigService:
             destination=destination,
             extensions=extensions,
             name_patterns=name_patterns,
+            name_regexes=name_regexes,
             priority=priority,
             always_matches=always_matches,
         )

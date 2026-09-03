@@ -21,6 +21,7 @@ def preview_view(app: TidyraApp) -> ft.Control:
         )
 
     moves = len(state.plan.to_execute())
+    removals = len(state.plan.directory_removals)
 
     header = ft.Container(
         content=ft.Column(
@@ -35,6 +36,17 @@ def preview_view(app: TidyraApp) -> ft.Control:
                     "Review the proposed moves below. Nothing happens until you press Organize.",
                     italic=True,
                     color=ft.Colors.GREY,
+                ),
+                *(
+                    [
+                        ft.Text(
+                            f"{removals} folder(s) will be checked after organizing. Only folders still empty are removed.",
+                            color=ft.Colors.AMBER,
+                            size=11,
+                        )
+                    ]
+                    if removals
+                    else []
                 ),
             ],
             spacing=4,
@@ -51,10 +63,10 @@ def preview_view(app: TidyraApp) -> ft.Control:
             ),
             ft.Container(expand=True),
             ft.ElevatedButton(
-                "Organize Files",
+                "Organize Files and Remove Empty Folders" if removals else "Organize Files",
                 icon=ft.Icons.CHECK,
                 on_click=lambda _e: app.organize(),
-                disabled=moves == 0 or state.loading,
+                disabled=(moves == 0 and removals == 0) or state.loading,
             ),
         ],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,

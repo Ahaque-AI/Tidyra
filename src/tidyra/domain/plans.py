@@ -50,6 +50,13 @@ class FileOperation:
 
 
 @dataclass(frozen=True, slots=True)
+class DirectoryRemoval:
+    """An explicitly confirmed directory that may be removed only if empty."""
+
+    path: Path
+
+
+@dataclass(frozen=True, slots=True)
 class OrganizationPlan:
     """A complete plan for one root directory.
 
@@ -59,6 +66,7 @@ class OrganizationPlan:
 
     root: Path
     operations: tuple[FileOperation, ...] = ()
+    directory_removals: tuple[DirectoryRemoval, ...] = ()
 
     def to_execute(self) -> tuple[FileOperation, ...]:
         return tuple(op for op in self.operations if op.will_execute)
@@ -67,7 +75,7 @@ class OrganizationPlan:
         return tuple(op for op in self.operations if not op.will_execute)
 
     def is_empty(self) -> bool:
-        return not any(op.will_execute for op in self.operations)
+        return not any(op.will_execute for op in self.operations) and not self.directory_removals
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +84,8 @@ class OrganizationResult:
 
     plan: OrganizationPlan
     failures: tuple[tuple[FileOperation, Exception], ...] = ()
+    removed_directories: tuple[Path, ...] = ()
+    directory_removal_failures: tuple[tuple[Path, Exception], ...] = ()
 
     @property
     def succeeded(self) -> tuple[FileOperation, ...]:
@@ -111,14 +121,27 @@ class PlanValidator:
     def root(self) -> Path:
         return self._root
 
-    def validate(self, operations: Sequence[FileOperation]) -> OrganizationPlan:
+    def validate(
+        self,
+        operations: Sequence[FileOperation],
+        directory_removals: Sequence[DirectoryRemoval] = (),
+    ) -> OrganizationPlan:
         """Apply safety checks and return the final plan.
 
         Operations already carrying a ``skip_reason`` are passed through
         unchanged — the validator does not re-judge them.
         """
         validated = tuple(self._check(op) for op in operations)
-        return OrganizationPlan(root=self._root, operations=validated)
+        safe_removals = tuple(
+            removal
+            for removal in directory_removals
+            if self._is_removable_directory(removal.path)
+        )
+        return OrganizationPlan(
+            root=self._root,
+            operations=validated,
+            directory_removals=safe_removals,
+        )
 
     def _check(self, op: FileOperation) -> FileOperation:
         if op.skip_reason is not None:
@@ -151,6 +174,11 @@ class PlanValidator:
         except ValueError:
             return False
         return True
+
+    def _is_removable_directory(self, path: Path) -> bool:
+        """Allow only non-root directories lexically contained by the plan root."""
+        resolved = path.resolve()
+        return resolved != self._root and self._is_within(resolved, self._root)
 
     @staticmethod
     def _with_skip(

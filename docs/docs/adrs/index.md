@@ -13,8 +13,11 @@ Every decision that shapes the codebase — layer boundaries, dependency choices
 | [0005](0005-plan-validator-as-single-safety-gate.md) | `PlanValidator` as the single safety gate | Accepted | 2026-09-02 |
 | [0006](0006-importlib-resources-for-packaged-assets.md) | `importlib.resources` for packaged assets | Accepted | 2026-09-02 |
 | [0007](0007-tidyra-brand-mark.md) | Tidyra brand mark — folder with three tidied file cards | Accepted | 2026-09-02 |
-| [0008](0008-smarter-rule-engine.md) | Smarter rule engine — name patterns, nested destinations, recursive scan | Accepted | 2026-09-02 |
+| [0008](0008-smarter-rule-engine.md) | Smarter rule engine — name patterns, nested destinations, recursive scan | Superseded by ADR-0012 | 2026-09-02 |
 | [0009](0009-cross-platform-packaging.md) | Cross-platform packaging — `flet build` + GitHub Actions releases | Accepted | 2026-09-02 |
+| [0010](0010-date-and-format-routing.md) | Date and format routing | Superseded by ADR-0012 | 2026-09-03 |
+| [0011](0011-explicit-empty-directory-cleanup.md) | Explicit empty-directory cleanup | Accepted | 2026-09-03 |
+| [0012](0012-regex-topic-routing-and-sortable-dates.md) | Regex topic routing and sortable dates | Accepted | 2026-09-03 |
 
 ## Format
 

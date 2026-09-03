@@ -129,7 +129,7 @@ files. The production implementation is ``LocalFileSystem``.
 
 Enforced in ``PlanValidator``:
 
-1. Never delete. Move only.
+1. Never delete files or recursively remove directories. An explicitly opted-in empty-directory cleanup may use a non-recursive OS removal only after the preview names its candidates.
 2. Source must be a regular file inside ``root``.
 3. Destination must resolve inside ``root``.
 4. Reject symlink sources.

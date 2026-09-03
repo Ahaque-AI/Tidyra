@@ -1,6 +1,6 @@
 # ADR-0008: Smarter rule engine — name patterns, nested destinations, recursive scan
 
-- Status: Accepted
+- Status: Superseded by ADR-0012
 - Date: 2026-09-02
 - Deciders: Abdul Haque, Mavis
 - Context: Tidyra's first rule engine only matched on file extensions and produced flat destinations, one level deep, by scanning only the direct children of the chosen root. The user wanted smarter classification by name, nested destination folders, and the ability to walk subdirectories.

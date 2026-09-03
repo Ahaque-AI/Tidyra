@@ -71,6 +71,15 @@ def home_view(app: TidyraApp) -> ft.Control:
             ),
             padding=ft.Padding.symmetric(vertical=8),
         ),
+        ft.Container(
+            content=ft.Checkbox(
+                label="Remove empty folders after organizing",
+                value=state.remove_empty_directories,
+                on_change=lambda _e: app.toggle_remove_empty_directories(),
+                tooltip="Only folders still empty at removal time are removed.",
+            ),
+            padding=ft.Padding.symmetric(vertical=2),
+        ),
         ft.Divider(),
     ]
 

@@ -8,6 +8,8 @@ summary — no nested scrolls.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import flet as ft
 
 from tidyra.domain.plans import FileOperation, OrganizationResult, SkipReason
@@ -16,6 +18,7 @@ from tidyra.domain.plans import FileOperation, OrganizationResult, SkipReason
 def result_view(result: OrganizationResult) -> ft.Control:
     moved = len(result.succeeded) - len(result.failures)
     failed = len(result.failures)
+    removed_directories = len(result.removed_directories)
     skipped = len(result.plan.skipped())
 
     summary = ft.Container(
@@ -33,6 +36,16 @@ def result_view(result: OrganizationResult) -> ft.Control:
                     else []
                 ),
                 ft.Chip(label=ft.Text(f"{skipped} skipped"), bgcolor=ft.Colors.GREY_200),
+                *(
+                    [
+                        ft.Chip(
+                            label=ft.Text(f"{removed_directories} empty folders removed"),
+                            bgcolor=ft.Colors.AMBER_100,
+                        )
+                    ]
+                    if removed_directories
+                    else []
+                ),
             ],
             spacing=8,
         ),
@@ -52,6 +65,12 @@ def result_view(result: OrganizationResult) -> ft.Control:
         sections.append(ft.Text("Failures", weight=ft.FontWeight.BOLD))
         sections.extend(_failure_card(op, exc) for op, exc in result.failures)
 
+    if result.directory_removal_failures:
+        sections.append(ft.Text("Folder cleanup failures", weight=ft.FontWeight.BOLD))
+        sections.extend(
+            _directory_failure_card(path, exc) for path, exc in result.directory_removal_failures
+        )
+
     return ft.Column(
         controls=sections,
         spacing=12,
@@ -66,6 +85,21 @@ def _failure_card(op: FileOperation, exc: Exception) -> ft.Control:
             content=ft.Column(
                 controls=[
                     ft.Text(op.source.name, weight=ft.FontWeight.BOLD),
+                    ft.Text(str(exc), color=ft.Colors.RED, size=11),
+                ],
+                spacing=2,
+            ),
+            padding=10,
+        )
+    )
+
+
+def _directory_failure_card(path: Path, exc: Exception) -> ft.Control:
+    return ft.Card(
+        content=ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Text(str(path), weight=ft.FontWeight.BOLD),
                     ft.Text(str(exc), color=ft.Colors.RED, size=11),
                 ],
                 spacing=2,
