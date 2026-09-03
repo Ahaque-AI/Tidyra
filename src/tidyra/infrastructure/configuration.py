@@ -123,12 +123,16 @@ class ConfigService:
         name_regexes_raw = entry.get("name_regexes", [])
         if not isinstance(name_regexes_raw, list):
             raise ValueError(f"rule {name!r} 'name_regexes' must be a list")
-        name_regexes = tuple(str(pattern) for pattern in name_regexes_raw if isinstance(pattern, str))
+        name_regexes = tuple(
+            str(pattern) for pattern in name_regexes_raw if isinstance(pattern, str)
+        )
         for pattern in name_regexes:
             try:
                 re.compile(pattern)
             except re.error as exc:
-                raise ValueError(f"rule {name!r} has invalid regular expression {pattern!r}") from exc
+                raise ValueError(
+                    f"rule {name!r} has invalid regular expression {pattern!r}"
+                ) from exc
         topic_regex_raw = entry.get("topic_regex")
         if topic_regex_raw is not None and not isinstance(topic_regex_raw, str):
             raise ValueError(f"rule {name!r} 'topic_regex' must be a string")

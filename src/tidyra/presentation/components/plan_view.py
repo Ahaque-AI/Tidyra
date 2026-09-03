@@ -60,7 +60,9 @@ def plan_view(plan: OrganizationPlan) -> ft.Control:
         sections.extend(skip_card(op) for op in skips)
 
     if plan.directory_removals:
-        sections.append(ft.Text("Folders checked for emptiness", weight=ft.FontWeight.BOLD, size=14))
+        sections.append(
+            ft.Text("Folders checked for emptiness", weight=ft.FontWeight.BOLD, size=14)
+        )
         sections.extend(
             ft.Text(str(removal.path), size=11, color=ft.Colors.AMBER)
             for removal in plan.directory_removals

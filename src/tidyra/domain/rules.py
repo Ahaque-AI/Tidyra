@@ -88,10 +88,14 @@ class OrganizationRule:
         lowered = name.lower()
         name_match = any(
             fnmatch.fnmatchcase(lowered, pattern.lower()) for pattern in self.name_patterns
-        ) or any(re.search(pattern, name, flags=re.IGNORECASE) is not None for pattern in self.name_regexes)
-        topic_match = self.topic_regex is not None and re.search(
-            self.topic_regex, name, flags=re.IGNORECASE
-        ) is not None
+        ) or any(
+            re.search(pattern, name, flags=re.IGNORECASE) is not None
+            for pattern in self.name_regexes
+        )
+        topic_match = (
+            self.topic_regex is not None
+            and re.search(self.topic_regex, name, flags=re.IGNORECASE) is not None
+        )
         has_name_matcher = bool(self.name_patterns or self.name_regexes or self.topic_regex)
         name_match = name_match or topic_match
 
@@ -132,9 +136,7 @@ class OrganizationRule:
         return cleaned
 
 
-def render_destination(
-    template: str, entry: FileEntry, *, topic: str | None = None
-) -> str:
+def render_destination(template: str, entry: FileEntry, *, topic: str | None = None) -> str:
     """Expand ``{date}``, ``{year}``, ``{month}``, ``{ext}``, ``{stem}``.
 
     Unknown placeholders are left as literal text so the user sees what

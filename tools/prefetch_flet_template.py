@@ -39,8 +39,7 @@ import urllib.request
 from pathlib import Path
 
 TEMPLATE_URL = (
-    "https://github.com/flet-dev/flet/releases/download/"
-    "v{version}/flet-build-template.zip"
+    "https://github.com/flet-dev/flet/releases/download/v{version}/flet-build-template.zip"
 )
 
 
@@ -54,10 +53,12 @@ def flet_version() -> str:
     """Resolve the Flet version (matches flet-cli's default template_ref)."""
     try:
         import flet.version as v
+
         return v.flet_version
     except Exception:
         # Fallback: read the version constant out of the flet-cli's installed copy.
         from importlib.metadata import version as _v
+
         return _v("flet")
 
 

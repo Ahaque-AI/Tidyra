@@ -49,10 +49,10 @@ from collections.abc import Iterable
 from pathlib import Path
 
 # Brand palette (matches ``src/tidyra/resources/tidyra-logo.svg``).
-_FOLDER_BODY = (0x0F, 0x76, 0x6E, 0xFF)       # deep teal #0F766E
-_FILE_CARD = (0x5E, 0xEA, 0xD4, 0xFF)        # light teal #5EEAD4
-_FILE_CARD_ALT = (0x5E, 0xEA, 0xD4, 0xC0)     # 75% alpha
-_FILE_CARD_ALT2 = (0x5E, 0xEA, 0xD4, 0x80)    # 50% alpha
+_FOLDER_BODY = (0x0F, 0x76, 0x6E, 0xFF)  # deep teal #0F766E
+_FILE_CARD = (0x5E, 0xEA, 0xD4, 0xFF)  # light teal #5EEAD4
+_FILE_CARD_ALT = (0x5E, 0xEA, 0xD4, 0xC0)  # 75% alpha
+_FILE_CARD_ALT2 = (0x5E, 0xEA, 0xD4, 0x80)  # 50% alpha
 _TRANSPARENT = (0, 0, 0, 0)
 
 # Brand geometry is authored on a 32-unit grid; the renderer scales
@@ -61,11 +61,11 @@ _REFERENCE = 32
 
 # Each rect: (x0, y0, x1, y1, color) on the 32-unit grid.
 _RECTS = (
-    (4, 7, 13, 12, _FOLDER_BODY),       # Folder tab
-    (3, 11, 29, 27, _FOLDER_BODY),     # Folder body outer
-    (4, 12, 28, 26, _FOLDER_BODY),     # Folder body inner (rounded approximation)
-    (6, 15, 26, 18, _FILE_CARD),       # File bar 1
-    (6, 19, 22, 22, _FILE_CARD_ALT),   # File bar 2
+    (4, 7, 13, 12, _FOLDER_BODY),  # Folder tab
+    (3, 11, 29, 27, _FOLDER_BODY),  # Folder body outer
+    (4, 12, 28, 26, _FOLDER_BODY),  # Folder body inner (rounded approximation)
+    (6, 15, 26, 18, _FILE_CARD),  # File bar 1
+    (6, 19, 22, 22, _FILE_CARD_ALT),  # File bar 2
     (6, 23, 24, 26, _FILE_CARD_ALT2),  # File bar 3
 )
 
@@ -73,10 +73,18 @@ _RECTS = (
 # transparent so the icon does not look like a tinted square at small
 # sizes (where the corner-to-corner gap is too thin to read).
 _CORNER_PIXELS: tuple[tuple[int, int], ...] = (
-    (0, 0), (1, 0), (0, 1),
-    (30, 0), (31, 0), (31, 1),
-    (0, 30), (1, 31), (0, 31),
-    (30, 31), (31, 30), (31, 31),
+    (0, 0),
+    (1, 0),
+    (0, 1),
+    (30, 0),
+    (31, 0),
+    (31, 1),
+    (0, 30),
+    (1, 31),
+    (0, 31),
+    (30, 31),
+    (31, 30),
+    (31, 31),
 )
 
 # PNG sizes to generate. These cover Linux (256 is canonical), the
@@ -158,9 +166,7 @@ def make_png(width: int, height: int, rgba: bytes) -> bytes:
         0,  # filter
         0,  # interlace
     )
-    raw = b"".join(
-        b"\x00" + rgba[y * width * 4 : (y + 1) * width * 4] for y in range(height)
-    )
+    raw = b"".join(b"\x00" + rgba[y * width * 4 : (y + 1) * width * 4] for y in range(height))
     idat = zlib.compress(raw, 9)
     return sig + _png_chunk(b"IHDR", ihdr) + _png_chunk(b"IDAT", idat) + _png_chunk(b"IEND", b"")
 
@@ -172,10 +178,12 @@ def make_ico(width: int, height: int, png: bytes) -> bytes:
         "<BBBBHHII",
         width if width < 256 else 0,
         height if height < 256 else 0,
-        0, 0,            # color_count, reserved
-        1, 32,           # planes, bit_count
+        0,
+        0,  # color_count, reserved
+        1,
+        32,  # planes, bit_count
         len(png),
-        6 + 16,         # offset = header + entry
+        6 + 16,  # offset = header + entry
     )
     return header + entry + png
 

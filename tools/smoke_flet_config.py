@@ -6,6 +6,7 @@ that the resulting ``package_app_path`` covers the whole ``tidyra``
 package — so serious_python can package it and the runtime can
 resolve ``import tidyra`` and friends.
 """
+
 from __future__ import annotations
 
 import importlib.util

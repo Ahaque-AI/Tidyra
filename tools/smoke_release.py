@@ -5,6 +5,7 @@ Validates the things the CI pipeline needs without actually running
 minutes). If this script passes, the release workflow has the inputs
 it expects.
 """
+
 from __future__ import annotations
 
 import tomllib
@@ -54,7 +55,9 @@ def main() -> None:
     entry = pkg_path / (Path(flet_cfg["module"]).stem + ".py")
     if not entry.exists():
         fail(f"[tool.flet.app] entry file missing: {entry}")
-    ok(f"[tool.flet.app] entry = {entry.relative_to(ROOT)} (path={flet_cfg['path']}, module={flet_cfg['module']})")
+    ok(
+        f"[tool.flet.app] entry = {entry.relative_to(ROOT)} (path={flet_cfg['path']}, module={flet_cfg['module']})"
+    )
     if not (pkg_path / "__init__.py").exists():
         fail(f"[tool.flet.app] path {pkg_path} is not a package (no __init__.py)")
     ok(f"[tool.flet.app] path {pkg_path.relative_to(ROOT)} is the tidyra package")
@@ -82,10 +85,13 @@ def main() -> None:
 
     # 5. Runtime icon is reachable via importlib.resources
     from importlib.resources import files
+
     runtime_ico = Path(str(files("tidyra.resources").joinpath("tidyra-icon.ico")))
     if not runtime_ico.exists():
         fail(f"runtime icon not resolvable: {runtime_ico}")
-    ok(f"runtime icon resolves to: {runtime_ico.relative_to(ROOT)} ({runtime_ico.stat().st_size} bytes)")
+    ok(
+        f"runtime icon resolves to: {runtime_ico.relative_to(ROOT)} ({runtime_ico.stat().st_size} bytes)"
+    )
 
     # 6. .gitignore has dist/
     gi = (ROOT / ".gitignore").read_text(encoding="utf-8")

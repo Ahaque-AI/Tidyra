@@ -3,6 +3,7 @@
 Runs without launching the UI — exercises the configuration loader,
 the strategy, the destination-rendering, and the plan validator.
 """
+
 from __future__ import annotations
 
 import time

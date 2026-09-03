@@ -15,7 +15,12 @@ from loguru import logger
 from tidyra.application.organize import OrganizeExecutor
 from tidyra.application.scanner import scan_directory
 from tidyra.domain.models import FileEntry
-from tidyra.domain.plans import DirectoryRemoval, OrganizationPlan, OrganizationResult, PlanValidator
+from tidyra.domain.plans import (
+    DirectoryRemoval,
+    OrganizationPlan,
+    OrganizationResult,
+    PlanValidator,
+)
 from tidyra.domain.rules import OrganizationRule
 from tidyra.domain.strategies import RuleBasedStrategy
 from tidyra.infrastructure.configuration import ConfigService, get_config_service

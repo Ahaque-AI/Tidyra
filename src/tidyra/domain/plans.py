@@ -148,9 +148,7 @@ class PlanValidator:
         """
         validated = tuple(self._check(op) for op in operations)
         safe_removals = tuple(
-            removal
-            for removal in directory_removals
-            if self._is_removable_directory(removal.path)
+            removal for removal in directory_removals if self._is_removable_directory(removal.path)
         )
         return OrganizationPlan(
             root=self._root,
@@ -205,7 +203,9 @@ class PlanValidator:
         if path is None:
             return None
         resolved = path.resolve()
-        return resolved if resolved != self._root and self._is_within(resolved, self._root) else None
+        return (
+            resolved if resolved != self._root and self._is_within(resolved, self._root) else None
+        )
 
     @staticmethod
     def _with_skip(
