@@ -15,6 +15,12 @@ on:
 permissions:
   contents: write   # needed to create the GitHub Release
 
+env:
+  # Flet may need to install its versioned Flutter SDK on a fresh runner.
+  # CI must never wait for an interactive prompt (or emit Unicode Rich output
+  # that cannot be encoded by Windows' default console).
+  FLET_CLI_NO_RICH_OUTPUT: "true"
+
 jobs:
   # ---------------------------------------------------------------------
   # Windows build → tidyra-windows-x64.zip
@@ -57,6 +63,7 @@ jobs:
 
       - name: Build Windows executable
         run: >
+          echo y |
           uv run flet build windows
           --project tidyra
           --product Tidyra
@@ -131,6 +138,7 @@ jobs:
 
       - name: Build macOS .app
         run: >
+          yes y |
           uv run flet build macos
           --project tidyra
           --product Tidyra
@@ -192,6 +200,7 @@ jobs:
 
       - name: Build Linux AppImage
         run: >
+          yes y |
           uv run flet build linux
           --project tidyra
           --product Tidyra
