@@ -30,7 +30,7 @@ for r in rules:
 
 
 # 2) Build a synthetic root and verify each interesting case
-root = Path(tempfile.mkdtemp(prefix="tidyra-smoke-"))
+root = Path(tempfile.mkdtemp(prefix="tidyra-smoke-")).resolve()
 entries = [
     # Vacation photo by name → high-priority rule beats generic photo
     FileEntry(
@@ -100,7 +100,7 @@ plan = strategy.create_plan(root=root, entries=entries, rules=rules)
 
 print("\nPlan results:")
 for op in plan.operations:
-    rel = op.destination.relative_to(root)
+    rel = op.destination.resolve().relative_to(root)
     status = "EXECUTE" if op.will_execute else f"SKIP({op.skip_reason})"
     print(f"  [{status}] {op.source.name:35s} -> {rel}   (rule={op.rule_name})")
 
